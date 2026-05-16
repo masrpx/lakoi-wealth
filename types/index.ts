@@ -14,6 +14,7 @@ export type {
   EndowmentMetrics,
   EndowmentYearlyValue,
   YearlyPolicyValue,
+  HealthScheduleRow,
 } from "./insurance";
 
 // ─── Portfolio ────────────────────────────────────────────────────────────────

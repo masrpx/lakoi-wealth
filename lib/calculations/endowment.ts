@@ -50,6 +50,23 @@ export function calculateEndowmentMetrics(policy: EndowmentPolicy): EndowmentMet
   cashflows[coveragePeriodYears] += finalCashValue;
 
   const irr = calculateIRR(cashflows);
+
+  // Projected metrics — only when agent has provided a projected total
+  if (policy.projectedMaturityValue !== undefined) {
+    const projectedCashflows = [...cashflows];
+    projectedCashflows[coveragePeriodYears] =
+      projectedCashflows[coveragePeriodYears] - finalCashValue + policy.projectedMaturityValue;
+
+    return {
+      totalPaid,
+      finalCashValue,
+      irr,
+      projectedMaturityValue: policy.projectedMaturityValue,
+      projectedIRR: calculateIRR(projectedCashflows),
+      projectedGain: policy.projectedMaturityValue - totalPaid,
+    };
+  }
+
   return { totalPaid, finalCashValue, irr };
 }
 
@@ -82,6 +99,8 @@ export function calculateEndowmentTimeline(
       cashValue,
       gain,
       isPast: currentAge > age,
+      projectedValue:
+        year === coveragePeriodYears ? policy.projectedMaturityValue : undefined,
     });
   }
 

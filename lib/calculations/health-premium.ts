@@ -1,4 +1,4 @@
-import type { HealthPolicy } from "@/types/insurance";
+import type { HealthPolicy, HealthScheduleRow } from "@/types/insurance";
 
 /**
  * Returns the yearly premium for a given age, or 0 if outside coverage period.
@@ -85,15 +85,15 @@ export function fillHealthPremiumGrid(
 }
 
 /**
- * Convenience: build a year-by-year premium schedule as an array of
- * { age, premium } objects, useful for charting.
+ * Year-by-year premium schedule with running cumulative total.
  */
-export function buildHealthPremiumSchedule(
-  policy: HealthPolicy
-): { age: number; premium: number }[] {
-  const rows: { age: number; premium: number }[] = [];
+export function buildHealthPremiumSchedule(policy: HealthPolicy): HealthScheduleRow[] {
+  const rows: HealthScheduleRow[] = [];
+  let cumulativePaid = 0;
   for (let age = policy.startAge; age <= policy.endAge; age++) {
-    rows.push({ age, premium: getHealthPremiumByAge(policy, age) });
+    const premium = getHealthPremiumByAge(policy, age);
+    cumulativePaid += premium;
+    rows.push({ age, premium, cumulativePaid });
   }
   return rows;
 }

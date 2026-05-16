@@ -5,8 +5,8 @@ import type { UnitLinkPolicy, YearlyPolicyValue } from "@/types/insurance";
  *
  * Formula per year (from PRD §12):
  *   startValue  = prevEndValue + premiumPaid + topUpPaid
- *   growth      = startValue × expectedReturn
- *   coiCharge   = startValue × costOfInsurance
+ *   growth      = startValue × (expectedReturn / 100)
+ *   coiCharge   = startValue × (costOfInsurance / 100)
  *   withdrawal  = monthlyAmount × 12  (if client age ≥ withdrawals.startAge)
  *   endValue    = startValue + growth − coiCharge − withdrawal
  *
@@ -53,9 +53,9 @@ export function calculateUnitLinkProjection(
 
     // ── Growth & charges ─────────────────────────────────────────────────────
     const startValue = prevEndValue + premiumPaid + topUpPaid;
-    const growth = startValue * expectedReturn;
-    // costOfInsurance is stored as a decimal (e.g. 0.005 = 0.5%)
-    const coiCharge = startValue * costOfInsurance;
+    // expectedReturn and costOfInsurance are stored as whole percentages (e.g. 7 = 7%)
+    const growth = startValue * (expectedReturn / 100);
+    const coiCharge = startValue * (costOfInsurance / 100);
 
     // ── Withdrawals ───────────────────────────────────────────────────────────
     let withdrawal = 0;
