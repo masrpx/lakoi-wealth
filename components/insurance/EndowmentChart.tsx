@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ReferenceLine, ResponsiveContainer, Legend,
+  ReferenceLine, ReferenceDot, ResponsiveContainer, Legend,
 } from "recharts";
 import type { EndowmentPolicy } from "@/types/insurance";
 import { calculateEndowmentMetrics, calculateEndowmentTimeline } from "@/lib/calculations/endowment";
@@ -97,8 +97,8 @@ export function EndowmentChart({ policy, currentAge }: EndowmentChartProps) {
 
       {/* Chart */}
       <div
-        className="rounded-xl p-4 flex-1 min-h-[280px]"
-        style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-card)" }}
+        className="rounded-xl p-4"
+        style={{ height: 320, background: "var(--bg-surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-card)" }}
       >
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 0 }}>
@@ -108,8 +108,8 @@ export function EndowmentChart({ policy, currentAge }: EndowmentChartProps) {
                 <stop offset="95%" stopColor="var(--rose-500)" stopOpacity={0.03} />
               </linearGradient>
               <linearGradient id="gradCash" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--teal-500)" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="var(--teal-500)" stopOpacity={0.05} />
+                <stop offset="5%" stopColor="var(--teal-500)" stopOpacity={0.5} />
+                <stop offset="95%" stopColor="var(--teal-500)" stopOpacity={0.18} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
@@ -137,17 +137,15 @@ export function EndowmentChart({ policy, currentAge }: EndowmentChartProps) {
               stroke="var(--rose-500)"
               strokeWidth={2}
               fill="url(#gradPremium)"
-              animationDuration={800}
-              animationEasing="ease-out"
+              isAnimationActive={false}
             />
             <Area
               type="monotone"
               dataKey="เงินคืน (รับประกัน)"
               stroke="var(--teal-500)"
-              strokeWidth={2.5}
+              strokeWidth={3}
               fill="url(#gradCash)"
-              animationDuration={800}
-              animationEasing="ease-out"
+              isAnimationActive={false}
             />
             {crossoverAge !== null && (
               <ReferenceLine
@@ -156,6 +154,17 @@ export function EndowmentChart({ policy, currentAge }: EndowmentChartProps) {
                 strokeWidth={1.5}
                 strokeDasharray="4 3"
                 label={{ value: `คุ้มทุน อายุ ${crossoverAge}`, position: "top", fontSize: 11, fill: "var(--gold-500)" }}
+              />
+            )}
+            {policy.projectedMaturityValue && (
+              <ReferenceDot
+                x={policy.startAge + policy.coveragePeriodYears - 1}
+                y={policy.projectedMaturityValue}
+                r={6}
+                fill="var(--gold-500)"
+                stroke="white"
+                strokeWidth={2}
+                label={{ value: `${fmtY(policy.projectedMaturityValue)} (รวมปันผล)`, position: "top", fontSize: 10, fill: "var(--gold-500)" }}
               />
             )}
           </AreaChart>
