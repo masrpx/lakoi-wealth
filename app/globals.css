@@ -38,9 +38,9 @@
   --color-purple-500: #a78bfa;
 
   /* Lakoi neutrals */
-  --color-bg-base:     #0a0e1a;
-  --color-bg-surface:  #111827;
-  --color-bg-elevated: #1a2236;
+  --color-bg-base:     #ffffff;
+  --color-bg-surface:  #f8fafc;
+  --color-bg-elevated: #f1f5f9;
 
   /* Fonts */
   --font-display: var(--font-playfair);
@@ -65,26 +65,26 @@
   --animate-rise:      rise var(--duration-base) var(--ease-out) both;
 }
 
-/* ─── Lakoi Wealth root tokens (always dark) ─── */
+/* ─── Lakoi Wealth root tokens (light theme) ─── */
 :root {
-  /* shadcn slot overrides → Lakoi palette */
-  --background:           #0a0e1a;
-  --foreground:           #f1f5f9;
-  --card:                 #111827;
-  --card-foreground:      #f1f5f9;
-  --popover:              #111827;
-  --popover-foreground:   #f1f5f9;
+  /* shadcn slot overrides → Lakoi light palette */
+  --background:           #ffffff;
+  --foreground:           #0f172a;
+  --card:                 #f8fafc;
+  --card-foreground:      #0f172a;
+  --popover:              #f8fafc;
+  --popover-foreground:   #0f172a;
   --primary:              #c9a84c;
-  --primary-foreground:   #0a0e1a;
-  --secondary:            #1a2236;
-  --secondary-foreground: #f1f5f9;
-  --muted:                #1a2236;
-  --muted-foreground:     #94a3b8;
-  --accent:               #1a2236;
-  --accent-foreground:    #c9a84c;
-  --destructive:          #fb7185;
-  --border:               rgba(255, 255, 255, 0.07);
-  --input:                #1a2236;
+  --primary-foreground:   #ffffff;
+  --secondary:            #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted:                #f1f5f9;
+  --muted-foreground:     #64748b;
+  --accent:               #f1f5f9;
+  --accent-foreground:    #0f172a;
+  --destructive:          #e11d48;
+  --border:               rgba(0, 0, 0, 0.08);
+  --input:                #f1f5f9;
   --ring:                 #c9a84c;
   --radius:               1rem;
 
@@ -97,23 +97,23 @@
   --blue-500:   #60a5fa;
   --purple-500: #a78bfa;
 
-  --bg-base:     #0a0e1a;
-  --bg-surface:  #111827;
-  --bg-elevated: #1a2236;
+  --bg-base:     #ffffff;
+  --bg-surface:  #f8fafc;
+  --bg-elevated: #f1f5f9;
 
-  --text-primary:   #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted:     #6b7280;
+  --text-primary:   #0f172a;
+  --text-secondary: #64748b;
+  --text-muted:     #94a3b8;
 
   /* Gradients */
   --grad-gold:  linear-gradient(135deg, #c9a84c, #f0d080);
   --grad-teal:  linear-gradient(135deg, #2dd4bf, #34d399);
   --grad-rose:  linear-gradient(135deg, #fb7185, #f43f5e);
 
-  /* Shadows */
-  --shadow-card:      0 8px 32px rgba(0, 0, 0, 0.4);
-  --shadow-elevated:  0 16px 48px rgba(0, 0, 0, 0.5);
-  --shadow-glow-gold: 0 0 24px rgba(201, 168, 76, 0.3);
+  /* Shadows — lighter for white background */
+  --shadow-card:      0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-elevated:  0 8px 32px rgba(0, 0, 0, 0.10);
+  --shadow-glow-gold: 0 0 24px rgba(201, 168, 76, 0.20);
 
   /* Easings */
   --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
