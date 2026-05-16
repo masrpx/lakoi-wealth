@@ -1,45 +1,20 @@
-// ─── Insurance ───────────────────────────────────────────────────────────────
+// ─── Insurance (canonical types live in types/insurance.ts) ──────────────────
 
-export interface InsurancePolicyBase {
-  id: string;
-  type: "endowment" | "whole_life" | "term" | "health" | "unit_link" | "accident";
-  name: string;
-  startAge: number;
-}
+import type { InsurancePolicy } from "./insurance";
 
-export interface EndowmentPolicy extends InsurancePolicyBase {
-  type: "endowment" | "whole_life" | "term";
-  yearlyPremium: number;
-  paymentPeriodYears: number;
-  coveragePeriodYears: number;
-  sumInsured: number;
-  cashValueByYear: number[]; // index 0 = year 1
-}
-
-export interface HealthPolicy extends InsurancePolicyBase {
-  type: "health";
-  endAge: number;
-  yearlyPremiumByAge: Record<number, number>; // { 35: 25000, 36: 27000, ... }
-  sumInsured: number;
-}
-
-export interface UnitLinkPolicy extends InsurancePolicyBase {
-  type: "unit_link";
-  regularYearlyPremium: number;
-  paymentPeriodYears: number;
-  sumInsured: number;
-  initialTopUp: number;
-  recurringTopUp: number;
-  adHocTopUps: { year: number; amount: number }[];
-  expectedReturn: number; // % per year (e.g. 0.06 = 6%)
-  costOfInsurance: number; // % of policy value
-  withdrawals: {
-    startAge: number;
-    monthlyAmount: number;
-  } | null;
-}
-
-export type InsurancePolicy = EndowmentPolicy | HealthPolicy | UnitLinkPolicy;
+export type {
+  InsurancePolicyType,
+  InsurancePolicy,
+  EndowmentPolicy,
+  HealthPolicy,
+  UnitLinkPolicy,
+  AccidentPolicy,
+  AdHocTopUp,
+  ULWithdrawal,
+  EndowmentMetrics,
+  EndowmentYearlyValue,
+  YearlyPolicyValue,
+} from "./insurance";
 
 // ─── Portfolio ────────────────────────────────────────────────────────────────
 
