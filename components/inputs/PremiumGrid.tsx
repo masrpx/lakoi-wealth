@@ -36,17 +36,14 @@ export function PremiumGrid({ sparseInputs, startAge, endAge, onChange }: Premiu
     [filledGrid]
   );
 
-  // Smart mode: band-aligned key ages + any non-key explicit entries
+  // Smart mode: band-aligned key ages only (21, 26, 31, 36, 41 ...)
   const smartAges = useMemo(() => {
     const marks: number[] = [];
     for (let a = startAge; a <= endAge; a++) {
       if (isKeyAge(a)) marks.push(a);
     }
-    const extraExplicit = Object.keys(sparseInputs)
-      .map(Number)
-      .filter((a) => a >= startAge && a <= endAge && !isKeyAge(a));
-    return [...new Set([...marks, ...extraExplicit])].sort((a, b) => a - b);
-  }, [sparseInputs, startAge, endAge]);
+    return marks;
+  }, [startAge, endAge]);
 
   const mainSmartAges = useMemo(() => smartAges.filter(a => a < 80), [smartAges]);
   const oldSmartAges  = useMemo(() => smartAges.filter(a => a >= 80), [smartAges]);

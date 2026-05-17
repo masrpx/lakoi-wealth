@@ -7,13 +7,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { Button } from "@/components/ui/button";
 import type { HealthPolicy } from "@/types/insurance";
-import {
-  fillHealthPremiumGrid,
-  buildHealthPremiumSchedule,
-  calculateHealthTotalPaid,
-} from "@/lib/calculations/health-premium";
 
 interface HealthChartProps {
   policy: HealthPolicy;
@@ -40,6 +34,28 @@ function barColor(age: number): string {
   if (age < 65) return "#60a5fa";
   if (age < 80) return "#c9a84c";
   return "#fb7185";
+}
+
+/** Step-function schedule: each age uses the most recent checkpoint value, no interpolation. */
+function buildStepSchedule(
+  sparseInputs: Record<number, number>,
+  startAge: number,
+  endAge: number
+): { age: number; premium: number; cumulativePaid: number }[] {
+  const entries = Object.entries(sparseInputs)
+    .map(([k, v]) => ({ age: Number(k), value: v }))
+    .filter((e) => e.age >= startAge && e.age <= endAge)
+    .sort((a, b) => a.age - b.age);
+
+  const rows: { age: number; premium: number; cumulativePaid: number }[] = [];
+  let cumulative = 0;
+  for (let age = startAge; age <= endAge; age++) {
+    const prev = [...entries].reverse().find((e) => e.age <= age);
+    const premium = prev?.value ?? 0;
+    cumulative += premium;
+    rows.push({ age, premium, cumulativePaid: cumulative });
+  }
+  return rows;
 }
 
 function KpiCard({ label, value, sub, color }: { label: string; value: string; sub?: string; color: string }) {
@@ -76,19 +92,9 @@ const CumulativeTooltip = ({ active, payload, label }: { active?: boolean; paylo
 };
 
 export function HealthChart({ policy }: HealthChartProps) {
-  const filledGrid = useMemo(
-    () => fillHealthPremiumGrid(policy.yearlyPremiumByAge, policy.startAge, policy.endAge),
+  const stepSchedule = useMemo(
+    () => buildStepSchedule(policy.yearlyPremiumByAge, policy.startAge, policy.endAge),
     [policy]
-  );
-
-  const filledPolicy = useMemo(
-    () => ({ ...policy, yearlyPremiumByAge: filledGrid }),
-    [policy, filledGrid]
-  );
-
-  const schedule = useMemo(
-    () => buildHealthPremiumSchedule(filledPolicy),
-    [filledPolicy]
   );
 
   // Range sum state
@@ -101,26 +107,22 @@ export function HealthChart({ policy }: HealthChartProps) {
   }, [policy.startAge, policy.endAge]);
 
   const rangeTotal = useMemo(
-    () => calculateHealthTotalPaid(filledPolicy, rangeFrom, rangeTo),
-    [filledPolicy, rangeFrom, rangeTo]
+    () => stepSchedule
+      .filter((r) => r.age >= rangeFrom && r.age <= rangeTo)
+      .reduce((sum, r) => sum + r.premium, 0),
+    [stepSchedule, rangeFrom, rangeTo]
   );
 
-  // Bar chart uses band-aligned key ages: (age - 1) % 5 === 0
-  const checkpointData = useMemo(() => {
-    const ticks: { age: number; premium: number; cumulativePaid: number; inRange: boolean }[] = [];
-    for (let a = policy.startAge; a <= policy.endAge; a++) {
-      if ((a - 1) % 5 === 0) {
-        const row = schedule.find(r => r.age === a);
-        if (row) ticks.push({ ...row, inRange: row.age >= rangeFrom && row.age <= rangeTo });
-      }
-    }
-    return ticks;
-  }, [schedule, policy.startAge, policy.endAge, rangeFrom, rangeTo]);
+  // Per-year bars with inRange flag
+  const barData = useMemo(
+    () => stepSchedule.map((r) => ({ ...r, inRange: r.age >= rangeFrom && r.age <= rangeTo })),
+    [stepSchedule, rangeFrom, rangeTo]
+  );
 
-  const totalPremium = schedule.length > 0 ? schedule[schedule.length - 1].cumulativePaid : 0;
+  const totalPremium = stepSchedule.length > 0 ? stepSchedule[stepSchedule.length - 1].cumulativePaid : 0;
   const years = policy.endAge - policy.startAge + 1;
   const avgYearly = years > 0 ? Math.round(totalPremium / years) : 0;
-  const peakRow = schedule.reduce(
+  const peakRow = stepSchedule.reduce(
     (best, r) => (r.premium > best.premium ? r : best),
     { age: policy.startAge, premium: 0, cumulativePaid: 0 }
   );
@@ -133,9 +135,19 @@ export function HealthChart({ policy }: HealthChartProps) {
     return ticks;
   }, [policy.startAge, policy.endAge]);
 
-  const isEmpty = schedule.every((r) => r.premium === 0);
+  const isEmpty = stepSchedule.every((r) => r.premium === 0);
 
   const isFullRange = rangeFrom === policy.startAge && rangeTo === policy.endAge;
+
+  const handleFromChange = (raw: string) => {
+    const n = parseInt(raw, 10);
+    if (!isNaN(n)) setRangeFrom(Math.max(policy.startAge, Math.min(n, rangeTo - 1)));
+  };
+
+  const handleToChange = (raw: string) => {
+    const n = parseInt(raw, 10);
+    if (!isNaN(n)) setRangeTo(Math.min(policy.endAge, Math.max(n, rangeFrom + 1)));
+  };
 
   return (
     <div className="flex flex-col h-full gap-4 p-4 overflow-y-auto">
@@ -163,54 +175,49 @@ export function HealthChart({ policy }: HealthChartProps) {
 
       {/* Range sum selector */}
       <div
-        className="rounded-xl p-3 flex flex-wrap items-center gap-3"
+        className="rounded-xl px-4 py-3 flex items-center gap-3 flex-wrap"
         style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
       >
         <span className="text-xs font-semibold uppercase tracking-wider shrink-0" style={{ color: "var(--text-muted)" }}>
           ช่วงอายุ
         </span>
 
-        {/* From stepper */}
-        <div className="flex items-center gap-1.5">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-9 w-9 shrink-0"
-            onClick={() => setRangeFrom(Math.max(policy.startAge, rangeFrom - 1))}
-          >−</Button>
-          <span className="text-sm font-bold w-8 text-center">{rangeFrom}</span>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-9 w-9 shrink-0"
-            onClick={() => setRangeFrom(Math.min(rangeTo - 1, rangeFrom + 1))}
-          >+</Button>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            value={rangeFrom}
+            min={policy.startAge}
+            max={rangeTo - 1}
+            onChange={(e) => handleFromChange(e.target.value)}
+            className="w-16 text-sm font-bold text-center rounded-lg px-2 outline-none"
+            style={{
+              height: 36,
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--border)",
+              color: "var(--text-primary)",
+            }}
+          />
+          <span className="text-xs text-muted-foreground">ถึง</span>
+          <input
+            type="number"
+            value={rangeTo}
+            min={rangeFrom + 1}
+            max={policy.endAge}
+            onChange={(e) => handleToChange(e.target.value)}
+            className="w-16 text-sm font-bold text-center rounded-lg px-2 outline-none"
+            style={{
+              height: 36,
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--border)",
+              color: "var(--text-primary)",
+            }}
+          />
         </div>
 
-        <span className="text-xs text-muted-foreground">ถึง</span>
-
-        {/* To stepper */}
-        <div className="flex items-center gap-1.5">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-9 w-9 shrink-0"
-            onClick={() => setRangeTo(Math.max(rangeFrom + 1, rangeTo - 1))}
-          >−</Button>
-          <span className="text-sm font-bold w-8 text-center">{rangeTo}</span>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-9 w-9 shrink-0"
-            onClick={() => setRangeTo(Math.min(policy.endAge, rangeTo + 1))}
-          >+</Button>
-        </div>
-
-        {/* Range total */}
         <div className="ml-auto text-right">
-          <p className="text-xs text-muted-foreground">รวม {rangeTo - rangeFrom + 1} ปี</p>
+          <p className="text-xs text-muted-foreground">{rangeTo - rangeFrom + 1} ปี</p>
           <p className="text-base font-bold" style={{ color: "var(--gold-500)" }}>
-            {fmtBahtShort(rangeTotal)}
+            {fmtBaht(rangeTotal)}
           </p>
         </div>
       </div>
@@ -225,16 +232,16 @@ export function HealthChart({ policy }: HealthChartProps) {
         </div>
       ) : (
         <>
-          {/* Bar chart — checkpoint premiums */}
+          {/* Bar chart — per-year step values */}
           <div
             className="rounded-xl p-4"
             style={{ height: 260, background: "var(--bg-surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-card)" }}
           >
             <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
-              เบี้ยรายช่วง 5 ปี
+              เบี้ยรายปี ตามอายุ
             </p>
             <ResponsiveContainer width="100%" height="85%">
-              <BarChart data={checkpointData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }} barCategoryGap="15%">
+              <BarChart data={barData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }} barCategoryGap="5%">
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis
                   dataKey="age"
@@ -251,12 +258,12 @@ export function HealthChart({ policy }: HealthChartProps) {
                   width={52}
                 />
                 <Tooltip content={<BarTooltip />} cursor={{ fill: "rgba(0,0,0,0.04)" }} />
-                <Bar dataKey="premium" radius={[3, 3, 0, 0]} isAnimationActive={false}>
-                  {checkpointData.map((row) => (
+                <Bar dataKey="premium" radius={[1, 1, 0, 0]} isAnimationActive={false}>
+                  {barData.map((row) => (
                     <Cell
                       key={row.age}
                       fill={barColor(row.age)}
-                      fillOpacity={isFullRange || row.inRange ? 0.9 : 0.2}
+                      fillOpacity={isFullRange || row.inRange ? 0.85 : 0.18}
                     />
                   ))}
                 </Bar>
@@ -264,7 +271,7 @@ export function HealthChart({ policy }: HealthChartProps) {
             </ResponsiveContainer>
           </div>
 
-          {/* Cumulative area chart — full schedule (smooth) */}
+          {/* Cumulative area chart */}
           <div
             className="rounded-xl p-4"
             style={{ height: 160, background: "var(--bg-surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-card)" }}
@@ -273,7 +280,7 @@ export function HealthChart({ policy }: HealthChartProps) {
               เบี้ยสะสม
             </p>
             <ResponsiveContainer width="100%" height="75%">
-              <AreaChart data={schedule} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+              <AreaChart data={stepSchedule} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="gradCumulative" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="var(--teal-500)" stopOpacity={0.4} />

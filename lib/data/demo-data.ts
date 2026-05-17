@@ -32,16 +32,16 @@ export const DEMO_HEALTH: HealthPolicy = {
   sumInsured: 5000000,
   // Sparse checkpoints — agent fills these from insurer rate table; fillHealthPremiumGrid interpolates gaps
   yearlyPremiumByAge: {
-     35:  22000,
-     40:  28000,
-     45:  38000,
-     50:  52000,
-     55:  72000,
-     60: 100000,
-     65: 140000,
-     70: 195000,
-     75: 270000,
-     80: 380000,
+     36:  22000,
+     41:  28000,
+     46:  38000,
+     51:  52000,
+     56:  72000,
+     61: 100000,
+     66: 140000,
+     71: 195000,
+     76: 270000,
+     81: 380000,
   },
 };
 
