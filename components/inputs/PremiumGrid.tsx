@@ -22,7 +22,6 @@ function isKeyAge(age: number): boolean {
 }
 
 export function PremiumGrid({ sparseInputs, startAge, endAge, onChange }: PremiumGridProps) {
-  const [mode, setMode] = useState<"smart" | "detailed">("smart");
   const [show80Plus, setShow80Plus] = useState(false);
 
   const filledGrid = useMemo(
@@ -35,8 +34,8 @@ export function PremiumGrid({ sparseInputs, startAge, endAge, onChange }: Premiu
     [filledGrid]
   );
 
-  // Smart mode: band-aligned key ages only (21, 26, 31, 36, 41 ...)
-  const smartAges = useMemo(() => {
+  // Key ages only: band-aligned (21, 26, 31, 36, 41 ...)
+  const keyAges = useMemo(() => {
     const marks: number[] = [];
     for (let a = startAge; a <= endAge; a++) {
       if (isKeyAge(a)) marks.push(a);
@@ -44,14 +43,8 @@ export function PremiumGrid({ sparseInputs, startAge, endAge, onChange }: Premiu
     return marks;
   }, [startAge, endAge]);
 
-  const mainSmartAges = useMemo(() => smartAges.filter(a => a < 80), [smartAges]);
-  const oldSmartAges  = useMemo(() => smartAges.filter(a => a >= 80), [smartAges]);
-
-  // Detailed mode: every age
-  const allAges = useMemo(
-    () => Array.from({ length: endAge - startAge + 1 }, (_, i) => startAge + i),
-    [startAge, endAge]
-  );
+  const mainAges = useMemo(() => keyAges.filter(a => a < 80), [keyAges]);
+  const oldAges  = useMemo(() => keyAges.filter(a => a >= 80), [keyAges]);
 
   const promote = (age: number) => {
     const interpolated = filledGrid[age] ?? 0;
@@ -74,7 +67,6 @@ export function PremiumGrid({ sparseInputs, startAge, endAge, onChange }: Premiu
     ages.map((age) => {
       const isExplicit = sparseInputs[age] !== undefined;
       const interpolated = filledGrid[age] ?? 0;
-      const canDemote = isExplicit && !isKeyAge(age) && mode === "detailed";
 
       return (
         <PremiumRow
@@ -82,7 +74,6 @@ export function PremiumGrid({ sparseInputs, startAge, endAge, onChange }: Premiu
           age={age}
           value={interpolated}
           isExplicit={isExplicit}
-          canDemote={canDemote}
           onPromote={() => promote(age)}
           onDemote={() => demote(age)}
           onChangeValue={(raw) => updateValue(age, raw)}
@@ -103,44 +94,25 @@ export function PremiumGrid({ sparseInputs, startAge, endAge, onChange }: Premiu
             {fmtBaht(totalPremium)}
           </p>
         </div>
-        <button
-          className="text-xs px-2.5 py-1 rounded-full transition-colors"
-          style={{
-            background: mode === "detailed" ? "var(--gold-500)" : "var(--bg-elevated)",
-            color: mode === "detailed" ? "#fff" : "var(--text-secondary)",
-            border: "1px solid var(--border)",
-          }}
-          onClick={() => setMode(mode === "smart" ? "detailed" : "smart")}
-        >
-          {mode === "smart" ? "ทุกอายุ" : "สรุป"}
-        </button>
       </div>
 
       {/* Column headers */}
       <div
-        className="grid grid-cols-[48px_1fr_60px] px-3 py-1.5 text-xs font-semibold text-muted-foreground"
+        className="grid grid-cols-[48px_1fr] px-3 py-1.5 text-xs font-semibold text-muted-foreground"
         style={{ background: "var(--bg-elevated)" }}
       >
         <span>อายุ</span>
         <span>เบี้ย/ปี</span>
-        <span className="text-right">สถานะ</span>
       </div>
 
-      {/* Rows — plain div so overflow-y actually works */}
+      {/* Rows */}
       <div className="overflow-y-auto" style={{ maxHeight: 320 }}>
-        {mode === "detailed"
-          ? renderRows(allAges)
-          : (
-            <>
-              {renderRows(mainSmartAges)}
-              {show80Plus && renderRows(oldSmartAges)}
-            </>
-          )
-        }
+        {renderRows(mainAges)}
+        {show80Plus && renderRows(oldAges)}
       </div>
 
-      {/* 80+ toggle — outside scroll area so it's always visible */}
-      {mode === "smart" && endAge >= 80 && (
+      {/* 80+ toggle — always visible below scroll area */}
+      {endAge >= 80 && (
         <button
           type="button"
           className="w-full px-3 text-xs text-center transition-colors hover:bg-black/[0.03]"
@@ -162,17 +134,18 @@ interface PremiumRowProps {
   age: number;
   value: number;
   isExplicit: boolean;
-  canDemote: boolean;
   onPromote: () => void;
   onDemote: () => void;
   onChangeValue: (raw: string) => void;
 }
 
-function PremiumRow({ age, value, isExplicit, canDemote, onPromote, onDemote, onChangeValue }: PremiumRowProps) {
+function PremiumRow({ age, value, isExplicit, onPromote, onChangeValue }: PremiumRowProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [focused, setFocused] = useState(false);
 
-  const displayValue = focused ? (value === 0 ? "" : String(value)) : (value === 0 ? "" : value.toLocaleString("th-TH"));
+  const displayValue = focused
+    ? (value === 0 ? "" : String(value))
+    : (value === 0 ? "" : value.toLocaleString("th-TH"));
 
   const handleAutoRowClick = () => {
     onPromote();
@@ -182,7 +155,7 @@ function PremiumRow({ age, value, isExplicit, canDemote, onPromote, onDemote, on
   if (!isExplicit) {
     return (
       <button
-        className="grid grid-cols-[48px_1fr_60px] items-center w-full px-3 text-left transition-colors hover:bg-black/[0.03]"
+        className="grid grid-cols-[48px_1fr] items-center w-full px-3 text-left transition-colors hover:bg-black/[0.03]"
         style={{ minHeight: 44, borderBottom: "1px solid var(--border)" }}
         onClick={handleAutoRowClick}
         type="button"
@@ -191,21 +164,13 @@ function PremiumRow({ age, value, isExplicit, canDemote, onPromote, onDemote, on
         <span className="text-sm" style={{ color: "var(--text-muted)" }}>
           {value > 0 ? `฿${value.toLocaleString("th-TH")}` : "—"}
         </span>
-        <span className="text-right">
-          <span
-            className="text-xs px-1.5 py-0.5 rounded-full"
-            style={{ background: "var(--bg-elevated)", color: "var(--text-muted)", border: "1px solid var(--border)" }}
-          >
-            auto
-          </span>
-        </span>
       </button>
     );
   }
 
   return (
     <div
-      className="grid grid-cols-[48px_1fr_60px] items-center px-3"
+      className="grid grid-cols-[48px_1fr] items-center px-3"
       style={{
         minHeight: 44,
         borderBottom: "1px solid var(--border)",
@@ -230,19 +195,6 @@ function PremiumRow({ age, value, isExplicit, canDemote, onPromote, onDemote, on
             onChangeValue(String(value));
           }}
         />
-      </div>
-      <div className="flex justify-end items-center">
-        {canDemote && (
-          <button
-            type="button"
-            className="text-xs w-5 h-5 rounded-full flex items-center justify-center transition-colors hover:bg-black/10"
-            style={{ color: "var(--text-muted)" }}
-            onClick={onDemote}
-            title="คืนค่า auto"
-          >
-            ×
-          </button>
-        )}
       </div>
     </div>
   );

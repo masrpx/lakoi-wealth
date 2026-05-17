@@ -30,10 +30,10 @@ function fmtBahtShort(n: number): string {
 }
 
 function barColor(age: number): string {
-  if (age < 50) return "#2dd4bf";
-  if (age < 65) return "#60a5fa";
-  if (age < 80) return "#c9a84c";
-  return "#fb7185";
+  if (age < 51) return "#2dd4bf";   // bands 1–50
+  if (age < 66) return "#60a5fa";   // bands 51–65
+  if (age < 81) return "#c9a84c";   // bands 66–80
+  return "#fb7185";                 // bands 81+
 }
 
 /** Step-function schedule: each age uses the most recent checkpoint value, no interpolation. */
