@@ -28,24 +28,24 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { href: "/(app)/profile", label: "Profile", icon: User },
-  { href: "/(app)/balance-sheet", label: "Balance Sheet", icon: Wallet },
-  { href: "/(app)/cashflow", label: "กระแสเงินสด", icon: BarChart3 },
-  { href: "/(app)/insurance/endowment", label: "Endowment", icon: Shield },
-  { href: "/(app)/insurance/health", label: "Health", icon: Shield },
-  { href: "/(app)/insurance/unit-link", label: "Unit Link", icon: TrendingUp },
-  { href: "/(app)/portfolio", label: "Portfolio", icon: TrendingUp },
-  { href: "/(app)/goals", label: "Goals", icon: Target },
-  { href: "/(app)/use-cases/portfolio-projection", label: "ภาพรวม", icon: Activity },
-  { href: "/(app)/scenarios", label: "Scenarios", icon: GitCompare },
+  { href: "/profile", label: "Profile", icon: User },
+  { href: "/balance-sheet", label: "Balance Sheet", icon: Wallet },
+  { href: "/cashflow", label: "กระแสเงินสด", icon: BarChart3 },
+  { href: "/insurance/endowment", label: "Endowment", icon: Shield },
+  { href: "/insurance/health", label: "Health", icon: Shield },
+  { href: "/insurance/unit-link", label: "Unit Link", icon: TrendingUp },
+  { href: "/portfolio", label: "Portfolio", icon: TrendingUp },
+  { href: "/goals", label: "Goals", icon: Target },
+  { href: "/use-cases/portfolio-projection", label: "ภาพรวม", icon: Activity },
+  { href: "/scenarios", label: "Scenarios", icon: GitCompare },
 ];
 
 const analysisItems = [
-  { href: "/(app)/analysis/insurance-gap", label: "ช่องว่างคุ้มครอง", icon: ShieldAlert },
-  { href: "/(app)/analysis/emergency-fund", label: "กองทุนฉุกเฉิน", icon: Wallet },
-  { href: "/(app)/analysis/tax", label: "วางแผนภาษี", icon: Receipt },
-  { href: "/(app)/analysis/stress-test", label: "ทดสอบความเครียด", icon: AlertTriangle },
-  { href: "/(app)/analysis/debt", label: "กลยุทธ์หนี้สิน", icon: CreditCard },
+  { href: "/analysis/insurance-gap", label: "ช่องว่างคุ้มครอง", icon: ShieldAlert },
+  { href: "/analysis/emergency-fund", label: "กองทุนฉุกเฉิน", icon: Wallet },
+  { href: "/analysis/tax", label: "วางแผนภาษี", icon: Receipt },
+  { href: "/analysis/stress-test", label: "ทดสอบความเครียด", icon: AlertTriangle },
+  { href: "/analysis/debt", label: "กลยุทธ์หนี้สิน", icon: CreditCard },
 ];
 
 const colors = [
