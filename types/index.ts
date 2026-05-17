@@ -67,6 +67,12 @@ export interface Goal {
 
 // ─── Cashflow ─────────────────────────────────────────────────────────────────
 
+export interface CustomExpenseItem {
+  id: string;
+  label: string;
+  monthlyAmount: number;
+}
+
 export interface CashflowEntry {
   id: string;
   label: string;

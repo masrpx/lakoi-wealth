@@ -25,7 +25,7 @@ import {
 const navItems = [
   { href: "/(app)/profile", label: "Profile", icon: User },
   { href: "/(app)/balance-sheet", label: "Balance Sheet", icon: Wallet },
-  { href: "/(app)/cashflow", label: "Net Worth", icon: TrendingUp },
+  { href: "/(app)/cashflow", label: "กระแสเงินสด", icon: BarChart3 },
   { href: "/(app)/insurance/endowment", label: "Endowment", icon: Shield },
   { href: "/(app)/insurance/health", label: "Health", icon: Shield },
   { href: "/(app)/insurance/unit-link", label: "Unit Link", icon: TrendingUp },

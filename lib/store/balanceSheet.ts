@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { Asset, Liability } from "@/types";
+import type { Asset, Liability, InvestmentItem, CustomExpenseItem } from "@/types";
 
 interface BalanceSheetState {
   assets: Asset[];
@@ -9,8 +9,10 @@ interface BalanceSheetState {
   monthlyExpense: number;
   currentAge: number;
   name: string;
-  propertyGrowthRate: number;  // whole %, default 3
-  goldGrowthRate: number;      // whole %, default 0
+  propertyGrowthRate: number;
+  goldGrowthRate: number;
+  investments: InvestmentItem[];
+  customExpenses: CustomExpenseItem[];
 
   addAsset(a: Asset): void;
   updateAsset(id: string, u: Partial<Asset>): void;
@@ -23,6 +25,14 @@ interface BalanceSheetState {
   setProfile(income: number, expense: number, age: number): void;
   setName(name: string): void;
   setGrowthAssumptions(propertyRate: number, goldRate: number): void;
+
+  setInvestments(items: InvestmentItem[]): void;
+  updateInvestmentDCA(id: string, monthlyDCA: number): void;
+
+  addCustomExpense(item: CustomExpenseItem): void;
+  removeCustomExpense(id: string): void;
+  updateCustomExpense(id: string, updates: Partial<Omit<CustomExpenseItem, "id">>): void;
+
   seed(data: {
     assets: Asset[];
     liabilities: Liability[];
@@ -32,6 +42,8 @@ interface BalanceSheetState {
     name?: string;
     propertyGrowthRate?: number;
     goldGrowthRate?: number;
+    investments?: InvestmentItem[];
+    customExpenses?: CustomExpenseItem[];
   }): void;
 }
 
@@ -46,6 +58,8 @@ export const useBalanceSheetStore = create<BalanceSheetState>()(
       name: "",
       propertyGrowthRate: 3,
       goldGrowthRate: 0,
+      investments: [],
+      customExpenses: [],
 
       addAsset: (a) => set((s) => ({ assets: [...s.assets, a] })),
       updateAsset: (id, u) =>
@@ -69,12 +83,36 @@ export const useBalanceSheetStore = create<BalanceSheetState>()(
       setGrowthAssumptions: (propertyGrowthRate, goldGrowthRate) =>
         set({ propertyGrowthRate, goldGrowthRate }),
 
+      setInvestments: (investments) => set({ investments }),
+
+      updateInvestmentDCA: (id, monthlyDCA) =>
+        set((s) => ({
+          investments: s.investments.map((inv) =>
+            inv.id === id ? { ...inv, monthlyDCA } : inv
+          ),
+        })),
+
+      addCustomExpense: (item) =>
+        set((s) => ({ customExpenses: [...s.customExpenses, item] })),
+
+      removeCustomExpense: (id) =>
+        set((s) => ({ customExpenses: s.customExpenses.filter((e) => e.id !== id) })),
+
+      updateCustomExpense: (id, updates) =>
+        set((s) => ({
+          customExpenses: s.customExpenses.map((e) =>
+            e.id === id ? { ...e, ...updates } : e
+          ),
+        })),
+
       seed: (data) =>
         set({
           ...data,
           name: data.name ?? "",
           propertyGrowthRate: data.propertyGrowthRate ?? 3,
           goldGrowthRate: data.goldGrowthRate ?? 0,
+          investments: data.investments ?? [],
+          customExpenses: data.customExpenses ?? [],
         }),
     }),
     { name: "lakoi-balance-sheet" }

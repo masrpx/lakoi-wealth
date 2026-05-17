@@ -241,7 +241,7 @@ function AllocationPie({ assets }: { assets: Asset[] }) {
 
 function SnapshotView({ snapshotAge }: { snapshotAge: number }) {
   const router = useRouter();
-  const { assets, liabilities, monthlyIncome, monthlyExpense, currentAge, propertyGrowthRate, goldGrowthRate } =
+  const { assets, liabilities, monthlyIncome, monthlyExpense, currentAge, propertyGrowthRate, goldGrowthRate, investments } =
     useBalanceSheetStore();
   const { policies } = useInsuranceStore();
 
@@ -254,9 +254,9 @@ function SnapshotView({ snapshotAge }: { snapshotAge: number }) {
     goldGrowthRate: goldGrowthRate ?? 0,
   };
   const snap = useMemo(
-    () => projectNetWorth(profile, assets, liabilities, policies, demoData.investments, years).at(-1),
+    () => projectNetWorth(profile, assets, liabilities, policies, investments, years).at(-1),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [snapshotAge, assets, liabilities, policies, JSON.stringify(profile)]
+    [snapshotAge, assets, liabilities, policies, investments, JSON.stringify(profile)]
   );
   if (!snap) return null;
 

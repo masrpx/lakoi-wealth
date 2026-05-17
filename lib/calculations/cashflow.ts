@@ -5,7 +5,7 @@ import type {
   UnitLinkPolicy,
   AccidentPolicy,
 } from "@/types/insurance";
-import type { InvestmentItem } from "@/types";
+import type { InvestmentItem, Liability, CustomExpenseItem } from "@/types";
 
 export interface CashflowProfile {
   currentAge: number;
@@ -41,6 +41,28 @@ export interface CashflowYearPoint {
   net: number;
   cumulative: number;
 }
+
+// ── V2 types — include debt payments and custom expenses ──────────────────────
+
+export interface CashflowBreakdownInput {
+  profile: CashflowProfile;
+  insurances: InsurancePolicy[];
+  investments: InvestmentItem[];
+  liabilities: Liability[];
+  customExpenses: CustomExpenseItem[];
+}
+
+export interface CashflowMonthPointV2 extends CashflowMonthPoint {
+  debtPayment: number;
+  customExpenseTotal: number;
+}
+
+export interface CashflowYearPointV2 extends CashflowYearPoint {
+  debtPayment: number;
+  customExpenseTotal: number;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const THAI_MONTHS = [
   "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
@@ -168,6 +190,120 @@ export function aggregateYearlyCashflow(
       returnItems,
       net,
       cumulative,
+    };
+  });
+}
+
+// ── V2 functions — same as above but include debt payments + custom expenses ──
+
+export function aggregateMonthlyCashflowV2(
+  input: CashflowBreakdownInput
+): CashflowMonthPointV2[] {
+  const { profile, insurances, investments, liabilities, customExpenses } = input;
+
+  const yearlyPremium = insurances.reduce(
+    (s, p) => s + yearlyPremiumForPolicy(p, profile.currentAge),
+    0
+  );
+  const monthlyPremium = yearlyPremium / 12;
+  const monthlyDCA = investments.reduce((s, inv) => s + (inv.monthlyDCA ?? 0), 0);
+  const debtPayment = liabilities.reduce((s, l) => s + l.monthlyPayment, 0);
+  const customExpenseTotal = customExpenses.reduce((s, e) => s + e.monthlyAmount, 0);
+
+  let cumulative = 0;
+  return THAI_MONTHS.map((label, i) => {
+    const net =
+      profile.monthlyIncome -
+      profile.monthlyExpense -
+      monthlyPremium -
+      monthlyDCA -
+      debtPayment -
+      customExpenseTotal;
+    cumulative += net;
+    return {
+      month: i + 1,
+      label,
+      income: profile.monthlyIncome,
+      livingExpense: profile.monthlyExpense,
+      insurancePremium: monthlyPremium,
+      investmentDCA: monthlyDCA,
+      net,
+      cumulative,
+      debtPayment,
+      customExpenseTotal,
+    };
+  });
+}
+
+export function aggregateYearlyCashflowV2(
+  input: CashflowBreakdownInput,
+  projectionYears = 30
+): CashflowYearPointV2[] {
+  const { profile, insurances, investments, liabilities, customExpenses } = input;
+
+  const baseIncome = profile.monthlyIncome * 12;
+  const baseExpense = profile.monthlyExpense * 12;
+  const yearlyDCA = investments.reduce((s, inv) => s + (inv.monthlyDCA ?? 0) * 12, 0);
+  const yearlyDebt = liabilities.reduce((s, l) => s + l.monthlyPayment * 12, 0);
+  const yearlyCustom = customExpenses.reduce((s, e) => s + e.monthlyAmount * 12, 0);
+
+  let cumulative = 0;
+  return Array.from({ length: projectionYears }, (_, i) => {
+    const age = profile.currentAge + i;
+
+    const insurancePremium = insurances.reduce(
+      (s, p) => s + yearlyPremiumForPolicy(p, age),
+      0
+    );
+
+    const returnItems: PolicyReturnItem[] = [];
+    for (const policy of insurances) {
+      if (policy.type === "endowment" || policy.type === "whole_life") {
+        const p = policy as EndowmentPolicy;
+        const maturityAge = p.startAge + p.coveragePeriodYears - 1;
+        if (age === maturityAge) {
+          const amount =
+            p.projectedMaturityValue ??
+            p.cashValueByYear[p.coveragePeriodYears - 1] ??
+            p.sumInsured;
+          returnItems.push({ policyName: p.name, amount });
+        }
+      }
+      if (policy.type === "unit_link") {
+        const p = policy as UnitLinkPolicy;
+        if (p.withdrawals && age >= p.withdrawals.startAge) {
+          returnItems.push({
+            policyName: p.name,
+            amount: p.withdrawals.monthlyAmount * 12,
+          });
+        }
+      }
+    }
+
+    const policyReturns = returnItems.reduce((s, r) => s + r.amount, 0);
+    const net =
+      baseIncome +
+      policyReturns -
+      baseExpense -
+      insurancePremium -
+      yearlyDCA -
+      yearlyDebt -
+      yearlyCustom;
+    cumulative += net;
+
+    return {
+      year: new Date().getFullYear() + i,
+      age,
+      income: baseIncome,
+      livingExpense: baseExpense,
+      insurancePremium,
+      investmentDCA: yearlyDCA,
+      policyReturns,
+      returnItems,
+      net,
+      cumulative,
+      debtPayment: yearlyDebt,
+      customExpenseTotal: yearlyCustom,
     };
   });
 }

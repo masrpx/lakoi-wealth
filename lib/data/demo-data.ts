@@ -97,10 +97,10 @@ export const demoData: AppState = {
     },
   ],
   investments: [
-    { id: "i1", name: "K-CASH",                  category: "fund", currentValue: 300000, expectedReturn: 1.5 },
-    { id: "i2", name: "TMBGQG (Global Equity)",  category: "fund", currentValue: 200000, expectedReturn: 9   },
-    { id: "i3", name: "ASP-DIVM (Thai Equity)",  category: "fund", currentValue: 150000, expectedReturn: 7   },
-    { id: "i4", name: "KFSMART (Mixed)",          category: "fund", currentValue: 100000, expectedReturn: 6   },
+    { id: "i1", name: "K-CASH",                  category: "fund", currentValue: 300000, expectedReturn: 1.5, monthlyDCA: 5000  },
+    { id: "i2", name: "TMBGQG (Global Equity)",  category: "fund", currentValue: 200000, expectedReturn: 9,   monthlyDCA: 10000 },
+    { id: "i3", name: "ASP-DIVM (Thai Equity)",  category: "fund", currentValue: 150000, expectedReturn: 7,   monthlyDCA: 5000  },
+    { id: "i4", name: "KFSMART (Mixed)",          category: "fund", currentValue: 100000, expectedReturn: 6,   monthlyDCA: 3000  },
   ],
   goals: [
     {
