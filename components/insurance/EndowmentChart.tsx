@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import {
   ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ReferenceLine, ReferenceDot, ResponsiveContainer, Legend,
+  ReferenceLine, ResponsiveContainer, Legend,
 } from "recharts";
 import type { EndowmentPolicy } from "@/types/insurance";
 import { calculateEndowmentMetrics, calculateEndowmentTimeline, totalDeathBenefitAtAge } from "@/lib/calculations/endowment";
@@ -64,7 +64,7 @@ export function EndowmentChart({ policy, currentAge }: EndowmentChartProps) {
     () => timeline.map((r) => ({
       age: r.age,
       "เบี้ยสะสม": r.cumulativePaid,
-      "มูลค่าเวนคืน": r.cashValue,
+      "มูลค่าเวนคืน": r.projectedValue ?? r.cashValue,
       "ทุนประกัน": totalDeathBenefitAtAge(policy, r.age),
     })),
     [timeline, policy]
@@ -181,17 +181,6 @@ export function EndowmentChart({ policy, currentAge }: EndowmentChartProps) {
                 strokeWidth={1}
                 strokeDasharray="4 3"
                 label={{ value: `คุ้มทุน อายุ ${crossoverAge}`, position: "top", fontSize: 11, fill: "var(--text-muted)" }}
-              />
-            )}
-            {policy.projectedMaturityValue && (
-              <ReferenceDot
-                x={policy.startAge + policy.coveragePeriodYears - 1}
-                y={policy.projectedMaturityValue}
-                r={6}
-                fill="var(--teal-500)"
-                stroke="white"
-                strokeWidth={2}
-                label={{ value: `${fmtY(policy.projectedMaturityValue)} (รวมปันผล)`, position: "top", fontSize: 10, fill: "var(--teal-500)" }}
               />
             )}
           </ComposedChart>

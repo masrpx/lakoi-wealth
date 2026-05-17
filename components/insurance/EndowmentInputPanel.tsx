@@ -40,13 +40,19 @@ export function EndowmentInputPanel({
   );
 
   const handleCoverageChange = (years: number) => {
-    const newTable = linearCashValues(years, draft.sumInsured || draft.yearlyPremium * years);
+    const currentMaturity =
+      draft.cashValueByYear[draft.coveragePeriodYears - 1] ?? draft.sumInsured;
+    const newTable = linearCashValues(years, currentMaturity);
     onChange({ ...draft, coveragePeriodYears: years, cashValueByYear: newTable });
   };
 
   const handleSumInsuredChange = (value: number) => {
+    onChange({ ...draft, sumInsured: value });
+  };
+
+  const handleMaturityValueChange = (value: number) => {
     const newTable = linearCashValues(draft.coveragePeriodYears, value);
-    onChange({ ...draft, sumInsured: value, cashValueByYear: newTable });
+    onChange({ ...draft, cashValueByYear: newTable });
   };
 
   const handleCashValueChange = (yearIndex: number, value: number) => {
@@ -160,7 +166,7 @@ export function EndowmentInputPanel({
           />
         </div>
 
-        {/* Sum insured */}
+        {/* Sum insured — death benefit only */}
         <div className="space-y-1">
           <CurrencyInput
             label="ทุนประกัน (ความคุ้มครองชีวิต)"
@@ -170,7 +176,17 @@ export function EndowmentInputPanel({
           <p className="text-xs text-muted-foreground px-0.5">คงที่ตลอดสัญญา — เงินที่จ่ายหากเสียชีวิต</p>
         </div>
 
-        {/* Projected maturity value */}
+        {/* Guaranteed maturity value — controls the teal line endpoint */}
+        <div className="space-y-1">
+          <CurrencyInput
+            label="เงินคืนรับประกัน (ครบสัญญา)"
+            value={draft.cashValueByYear[draft.coveragePeriodYears - 1] ?? 0}
+            onChange={handleMaturityValueChange}
+          />
+          <p className="text-xs text-muted-foreground px-0.5">เงินที่รับรองจากบริษัท — ใช้จากตารางผลประโยชน์</p>
+        </div>
+
+        {/* Projected maturity value — optional spike on teal line */}
         <CurrencyInput
           label="เงินคืนครบสัญญา + ปันผล (ประมาณการ)"
           value={draft.projectedMaturityValue ?? 0}

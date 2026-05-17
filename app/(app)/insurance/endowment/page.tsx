@@ -12,7 +12,8 @@ import type { EndowmentPolicy } from "@/types/insurance";
 
 function blankPolicy(): EndowmentPolicy {
   const years = 20;
-  const sum = 1000000;
+  const deathBenefit = 1_200_000;
+  const maturityValue = 1_200_000;
   return {
     id: crypto.randomUUID(),
     type: "endowment",
@@ -21,9 +22,9 @@ function blankPolicy(): EndowmentPolicy {
     yearlyPremium: 50000,
     paymentPeriodYears: years,
     coveragePeriodYears: years,
-    sumInsured: sum,
+    sumInsured: deathBenefit,
     cashValueByYear: Array.from({ length: years }, (_, i) =>
-      Math.round((sum / years) * (i + 1))
+      Math.round((maturityValue / years) * (i + 1))
     ),
   };
 }
