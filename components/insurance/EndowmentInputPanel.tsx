@@ -5,7 +5,6 @@ import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CurrencyInput } from "@/components/inputs/CurrencyInput";
@@ -135,11 +134,13 @@ export function EndowmentInputPanel({
             <Label className="text-sm text-muted-foreground">ระยะเวลาชำระเบี้ย</Label>
             <span className="text-sm font-semibold">{draft.paymentPeriodYears} ปี</span>
           </div>
-          <Slider
-            value={[draft.paymentPeriodYears]}
+          <input
+            type="range"
+            value={draft.paymentPeriodYears}
             min={1} max={30} step={1}
-            onValueChange={(vals) => set("paymentPeriodYears", Math.min((vals as number[])[0], draft.coveragePeriodYears))}
-            className="py-1"
+            onChange={(e) => set("paymentPeriodYears", Math.min(Number(e.target.value), draft.coveragePeriodYears))}
+            className="w-full h-1.5 rounded-full appearance-none cursor-pointer my-1"
+            style={{ accentColor: "var(--gold-500)" }}
           />
         </div>
 
@@ -149,11 +150,13 @@ export function EndowmentInputPanel({
             <Label className="text-sm text-muted-foreground">ระยะเวลาคุ้มครอง</Label>
             <span className="text-sm font-semibold">{draft.coveragePeriodYears} ปี (ถึงอายุ {draft.startAge + draft.coveragePeriodYears - 1})</span>
           </div>
-          <Slider
-            value={[draft.coveragePeriodYears]}
+          <input
+            type="range"
+            value={draft.coveragePeriodYears}
             min={draft.paymentPeriodYears} max={99} step={1}
-            onValueChange={(vals) => handleCoverageChange((vals as number[])[0])}
-            className="py-1"
+            onChange={(e) => handleCoverageChange(Number(e.target.value))}
+            className="w-full h-1.5 rounded-full appearance-none cursor-pointer my-1"
+            style={{ accentColor: "var(--gold-500)" }}
           />
         </div>
 

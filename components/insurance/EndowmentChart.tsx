@@ -69,6 +69,15 @@ export function EndowmentChart({ policy, currentAge }: EndowmentChartProps) {
     [timeline]
   );
 
+  const yAxisMax = useMemo(() => {
+    const dataMax = Math.max(
+      ...chartData.map((d) => d["เบี้ยสะสม"]),
+      ...chartData.map((d) => d["เงินคืน (รับประกัน)"]),
+      policy.projectedMaturityValue ?? 0,
+    );
+    return Math.ceil(dataMax * 1.18);
+  }, [chartData, policy.projectedMaturityValue]);
+
   const irrDisplay = metrics.projectedIRR ?? metrics.irr;
   const valueDisplay = metrics.projectedMaturityValue ?? metrics.finalCashValue;
 
@@ -126,6 +135,7 @@ export function EndowmentChart({ policy, currentAge }: EndowmentChartProps) {
               tickLine={false}
               axisLine={false}
               width={60}
+              domain={[0, yAxisMax]}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend
