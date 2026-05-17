@@ -19,11 +19,13 @@ import {
   GitCompare,
   ArrowRight,
   Sparkles,
+  User,
 } from "lucide-react";
 
 const navItems = [
+  { href: "/(app)/profile", label: "Profile", icon: User },
   { href: "/(app)/balance-sheet", label: "Balance Sheet", icon: Wallet },
-  { href: "/(app)/cashflow", label: "Cashflow", icon: BarChart3 },
+  { href: "/(app)/cashflow", label: "Net Worth", icon: TrendingUp },
   { href: "/(app)/insurance/endowment", label: "Endowment", icon: Shield },
   { href: "/(app)/insurance/health", label: "Health", icon: Shield },
   { href: "/(app)/insurance/unit-link", label: "Unit Link", icon: TrendingUp },

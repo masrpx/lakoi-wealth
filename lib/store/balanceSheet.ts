@@ -8,6 +8,9 @@ interface BalanceSheetState {
   monthlyIncome: number;
   monthlyExpense: number;
   currentAge: number;
+  name: string;
+  propertyGrowthRate: number;  // whole %, default 3
+  goldGrowthRate: number;      // whole %, default 0
 
   addAsset(a: Asset): void;
   updateAsset(id: string, u: Partial<Asset>): void;
@@ -18,12 +21,17 @@ interface BalanceSheetState {
   removeLiability(id: string): void;
 
   setProfile(income: number, expense: number, age: number): void;
+  setName(name: string): void;
+  setGrowthAssumptions(propertyRate: number, goldRate: number): void;
   seed(data: {
     assets: Asset[];
     liabilities: Liability[];
     monthlyIncome: number;
     monthlyExpense: number;
     currentAge: number;
+    name?: string;
+    propertyGrowthRate?: number;
+    goldGrowthRate?: number;
   }): void;
 }
 
@@ -35,6 +43,9 @@ export const useBalanceSheetStore = create<BalanceSheetState>()(
       monthlyIncome: 0,
       monthlyExpense: 0,
       currentAge: 35,
+      name: "",
+      propertyGrowthRate: 3,
+      goldGrowthRate: 0,
 
       addAsset: (a) => set((s) => ({ assets: [...s.assets, a] })),
       updateAsset: (id, u) =>
@@ -53,7 +64,18 @@ export const useBalanceSheetStore = create<BalanceSheetState>()(
       setProfile: (monthlyIncome, monthlyExpense, currentAge) =>
         set({ monthlyIncome, monthlyExpense, currentAge }),
 
-      seed: (data) => set(data),
+      setName: (name) => set({ name }),
+
+      setGrowthAssumptions: (propertyGrowthRate, goldGrowthRate) =>
+        set({ propertyGrowthRate, goldGrowthRate }),
+
+      seed: (data) =>
+        set({
+          ...data,
+          name: data.name ?? "",
+          propertyGrowthRate: data.propertyGrowthRate ?? 3,
+          goldGrowthRate: data.goldGrowthRate ?? 0,
+        }),
     }),
     { name: "lakoi-balance-sheet" }
   )

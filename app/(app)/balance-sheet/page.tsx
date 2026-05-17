@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useMemo, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Plus, Pencil, Trash2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { useBalanceSheetStore } from "@/lib/store/balanceSheet";
+import { useInsuranceStore } from "@/lib/store/insurance";
+import { projectNetWorth } from "@/lib/calculations/netWorth";
 import { demoData } from "@/lib/data/demo-data";
 import type { Asset, Liability, AssetCategory, LiabilityCategory } from "@/types";
 
@@ -235,16 +237,146 @@ function AllocationPie({ assets }: { assets: Asset[] }) {
   );
 }
 
+// ── Snapshot View ─────────────────────────────────────────────────────────────
+
+function SnapshotView({ snapshotAge }: { snapshotAge: number }) {
+  const router = useRouter();
+  const { assets, liabilities, monthlyIncome, monthlyExpense, currentAge, propertyGrowthRate, goldGrowthRate } =
+    useBalanceSheetStore();
+  const { policies } = useInsuranceStore();
+
+  const years = Math.max(1, snapshotAge - (currentAge || 35) + 1);
+  const profile = {
+    currentAge: currentAge || 35,
+    monthlyIncome: monthlyIncome || 150000,
+    monthlyExpense: monthlyExpense || 80000,
+    propertyGrowthRate: propertyGrowthRate ?? 3,
+    goldGrowthRate: goldGrowthRate ?? 0,
+  };
+  const snap = useMemo(
+    () => projectNetWorth(profile, assets, liabilities, policies, demoData.investments, years).at(-1),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [snapshotAge, assets, liabilities, policies, JSON.stringify(profile)]
+  );
+  if (!snap) return null;
+
+  const totalA = snap.cash + snap.property + snap.investment + snap.gold + snap.insuranceCashValue + snap.other;
+  const totalL = Math.abs(snap.liabilities);
+  const assetPct = totalA + totalL > 0 ? (totalA / (totalA + totalL)) * 100 : 50;
+
+  const categories: { label: string; value: number; color: string }[] = [
+    { label: "เงินสด/ฝาก",      value: snap.cash,               color: "#60a5fa" },
+    { label: "อสังหาฯ",          value: snap.property,            color: "#c9a84c" },
+    { label: "ลงทุน",             value: snap.investment,          color: "#2dd4bf" },
+    { label: "ทองคำ",             value: snap.gold,                color: "#f59e0b" },
+    { label: "มูลค่ากรมธรรม์",   value: snap.insuranceCashValue,  color: "#a78bfa" },
+    { label: "อื่น ๆ",           value: snap.other,               color: "#94a3b8" },
+  ].filter((c) => c.value > 0);
+
+  return (
+    <div className="flex flex-col min-h-screen bg-background pb-10">
+      <header className="flex items-center gap-3 px-5 py-3 sticky top-0 z-20"
+        style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-surface)" }}>
+        <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0" onClick={() => router.back()}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div className="flex-1">
+          <h1 className="text-base font-semibold leading-tight">งบดุล</h1>
+          <p className="text-xs text-muted-foreground">สินทรัพย์ · หนี้สิน · ความมั่งคั่งสุทธิ</p>
+        </div>
+      </header>
+
+      {/* Snapshot banner */}
+      <div className="px-5 py-2.5 flex items-center gap-2"
+        style={{ background: "#c9a84c18", borderBottom: "1px solid #c9a84c44" }}>
+        <span className="w-2 h-2 rounded-full" style={{ background: "var(--gold-500)" }} />
+        <p className="text-xs font-semibold flex-1" style={{ color: "var(--gold-500)" }}>
+          คาดการณ์ ณ อายุ {snapshotAge} ปี
+        </p>
+        <button type="button" className="text-xs underline" style={{ color: "var(--text-muted)" }} onClick={() => router.back()}>
+          ← กลับ
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        {/* KPI */}
+        <div className="grid grid-cols-3 gap-2 px-5 py-4"
+          style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-surface)" }}>
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground mb-0.5">สินทรัพย์รวม</p>
+            <p className="text-base font-bold" style={{ color: "#2dd4bf" }}>{fmtBaht(totalA)}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground mb-0.5">ความมั่งคั่งสุทธิ</p>
+            <p className="text-lg font-bold font-display" style={{ color: snap.netWorth >= 0 ? "var(--gold-500)" : "#fb7185" }}>
+              {fmtBaht(snap.netWorth)}
+            </p>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground mb-0.5">หนี้สินรวม</p>
+            <p className="text-base font-bold" style={{ color: "#fb7185" }}>{fmtBaht(totalL)}</p>
+          </div>
+        </div>
+
+        {/* Balance bar */}
+        <div className="px-5 py-3" style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-surface)" }}>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs w-14 text-right" style={{ color: "#2dd4bf" }}>สินทรัพย์</span>
+            <div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: "#fb718533" }}>
+              <div className="h-full rounded-full" style={{ width: `${assetPct}%`, background: "#2dd4bf" }} />
+            </div>
+            <span className="text-xs w-14" style={{ color: "#fb7185" }}>หนี้สิน</span>
+          </div>
+        </div>
+
+        {/* Projected asset categories */}
+        <div className="px-5 pt-4 pb-2">
+          <h2 className="text-sm font-semibold mb-3" style={{ color: "#2dd4bf" }}>สินทรัพย์ (ตามประเภท)</h2>
+          <div className="space-y-2">
+            {categories.map((c) => (
+              <div key={c.label} className="flex items-center gap-3 px-4 py-3 rounded-xl"
+                style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}>
+                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: c.color }} />
+                <p className="text-sm flex-1" style={{ color: "var(--text-primary)" }}>{c.label}</p>
+                <p className="text-sm font-bold tabular-nums" style={{ color: c.color }}>{fmtFull(c.value)}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Projected liabilities */}
+        <div className="px-5 pt-3 pb-10">
+          <h2 className="text-sm font-semibold mb-3" style={{ color: "#fb7185" }}>หนี้สิน</h2>
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl"
+            style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}>
+            <p className="text-sm flex-1" style={{ color: "var(--text-muted)" }}>ยอดหนี้คงเหลือรวม</p>
+            <p className="text-sm font-bold tabular-nums" style={{ color: "#fb7185" }}>{fmtFull(totalL)}</p>
+          </div>
+          <p className="text-xs mt-3 text-center text-muted-foreground">
+            แสดงมูลค่าคาดการณ์ · แตะ ← เพื่อกลับสู่มูลค่าปัจจุบัน
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ──────────────────────────────────────────────────────────────────
 
-export default function BalanceSheetPage() {
+function BalanceSheetContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const snapshotAge = searchParams.get("snapshot") ? Number(searchParams.get("snapshot")) : null;
+
   const {
     assets, liabilities,
     addAsset, updateAsset, removeAsset,
     addLiability, updateLiability, removeLiability,
     seed,
   } = useBalanceSheetStore();
+
+  // Show projected snapshot if query param present
+  if (snapshotAge !== null) return <SnapshotView snapshotAge={snapshotAge} />;
 
   const [addingAsset, setAddingAsset] = useState(false);
   const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
@@ -462,5 +594,13 @@ export default function BalanceSheetPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BalanceSheetPage() {
+  return (
+    <Suspense>
+      <BalanceSheetContent />
+    </Suspense>
   );
 }

@@ -54,7 +54,7 @@ function healthStepPremium(policy: HealthPolicy, age: number): number {
   return cp !== undefined ? policy.yearlyPremiumByAge[cp] : 0;
 }
 
-function yearlyPremiumForPolicy(policy: InsurancePolicy, age: number): number {
+export function yearlyPremiumForPolicy(policy: InsurancePolicy, age: number): number {
   switch (policy.type) {
     case "endowment":
     case "whole_life":
