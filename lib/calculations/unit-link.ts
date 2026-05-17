@@ -107,3 +107,36 @@ export function calculateULPeakValue(
   }
   return peak;
 }
+
+/**
+ * Back-solves the implied annual return rate that produces `targetValue`
+ * at policy year `targetYear` given the policy's cash flows.
+ * Uses binary search. Returns the current policy.expectedReturn unchanged
+ * if inputs are invalid.
+ */
+export function solveIRR(
+  policy: UnitLinkPolicy,
+  targetValue: number,
+  targetYear: number,
+  startAge: number,
+  tolerance = 0.01,
+  maxIter = 80
+): number {
+  if (targetValue <= 0 || targetYear <= 0) return policy.expectedReturn;
+  let lo = 0, hi = 50;
+  for (let i = 0; i < maxIter; i++) {
+    const mid = (lo + hi) / 2;
+    const proj = calculateUnitLinkProjection(
+      { ...policy, expectedReturn: mid },
+      startAge,
+      targetYear
+    );
+    const val = proj[proj.length - 1]?.endValue ?? 0;
+    if (targetValue > 0 && Math.abs(val - targetValue) / targetValue < tolerance) {
+      return +mid.toFixed(4);
+    }
+    if (val < targetValue) lo = mid;
+    else hi = mid;
+  }
+  return +((lo + hi) / 2).toFixed(4);
+}
