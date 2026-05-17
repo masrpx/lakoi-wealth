@@ -158,13 +158,6 @@ export default function NetWorthPage() {
             <ComposedChart
               data={projection}
               margin={{ top: 16, right: 12, left: 0, bottom: 4 }}
-              onClick={(data: unknown) => {
-                const d = data as { activePayload?: { payload: { age: number } }[] } | null;
-                if (d?.activePayload?.[0]) {
-                  router.push(`/balance-sheet?snapshot=${d.activePayload[0].payload.age}`);
-                }
-              }}
-              style={{ cursor: "pointer" }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
               <ReferenceLine y={0} stroke="var(--border)" strokeWidth={1.5} />
@@ -188,14 +181,14 @@ export default function NetWorthPage() {
                 formatter={(v: string) => CAT_LABELS[v] ?? v}
               />
 
-              {/* Stacked asset bars */}
-              <Bar dataKey="cash"               stackId="nw" fill="#60a5fa" isAnimationActive={false} />
-              <Bar dataKey="property"           stackId="nw" fill="#c9a84c" isAnimationActive={false} />
-              <Bar dataKey="investment"         stackId="nw" fill="#2dd4bf" isAnimationActive={false} />
-              <Bar dataKey="gold"               stackId="nw" fill="#f59e0b" isAnimationActive={false} />
-              <Bar dataKey="insuranceCashValue" stackId="nw" fill="#a78bfa" isAnimationActive={false} />
-              <Bar dataKey="other"              stackId="nw" fill="#94a3b8" isAnimationActive={false} />
-              <Bar dataKey="liabilities"        stackId="nw" fill="#fb7185" fillOpacity={0.55} isAnimationActive={false} />
+              {/* Stacked asset bars — onClick on each bar fires with the full data row */}
+              <Bar dataKey="cash"               stackId="nw" fill="#60a5fa" isAnimationActive={false} cursor="pointer" onClick={(d) => router.push(`/balance-sheet?snapshot=${(d as unknown as { age: number }).age}`)} />
+              <Bar dataKey="property"           stackId="nw" fill="#c9a84c" isAnimationActive={false} cursor="pointer" onClick={(d) => router.push(`/balance-sheet?snapshot=${(d as unknown as { age: number }).age}`)} />
+              <Bar dataKey="investment"         stackId="nw" fill="#2dd4bf" isAnimationActive={false} cursor="pointer" onClick={(d) => router.push(`/balance-sheet?snapshot=${(d as unknown as { age: number }).age}`)} />
+              <Bar dataKey="gold"               stackId="nw" fill="#f59e0b" isAnimationActive={false} cursor="pointer" onClick={(d) => router.push(`/balance-sheet?snapshot=${(d as unknown as { age: number }).age}`)} />
+              <Bar dataKey="insuranceCashValue" stackId="nw" fill="#a78bfa" isAnimationActive={false} cursor="pointer" onClick={(d) => router.push(`/balance-sheet?snapshot=${(d as unknown as { age: number }).age}`)} />
+              <Bar dataKey="other"              stackId="nw" fill="#94a3b8" isAnimationActive={false} cursor="pointer" onClick={(d) => router.push(`/balance-sheet?snapshot=${(d as unknown as { age: number }).age}`)} />
+              <Bar dataKey="liabilities"        stackId="nw" fill="#fb7185" fillOpacity={0.55} isAnimationActive={false} cursor="pointer" onClick={(d) => router.push(`/balance-sheet?snapshot=${(d as unknown as { age: number }).age}`)} />
 
               {/* Net worth line */}
               <Line
