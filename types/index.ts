@@ -48,6 +48,7 @@ export interface Liability {
   category: LiabilityCategory;
   totalAmount: number;
   monthlyPayment: number;
+  interestRate?: number; // % per year, e.g. 5.0
 }
 
 // ─── Goals ───────────────────────────────────────────────────────────────────

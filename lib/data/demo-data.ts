@@ -87,6 +87,7 @@ export const demoData: AppState = {
       category: "home_loan",
       totalAmount: 2800000,
       monthlyPayment: 18000,
+      interestRate: 3.0,
     },
     {
       id: "l2",
@@ -94,6 +95,7 @@ export const demoData: AppState = {
       category: "car_loan",
       totalAmount: 350000,
       monthlyPayment: 8500,
+      interestRate: 5.0,
     },
   ],
   investments: [

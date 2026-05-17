@@ -21,6 +21,10 @@ import {
   Sparkles,
   User,
   Activity,
+  ShieldAlert,
+  Receipt,
+  AlertTriangle,
+  CreditCard,
 } from "lucide-react";
 
 const navItems = [
@@ -34,6 +38,14 @@ const navItems = [
   { href: "/(app)/goals", label: "Goals", icon: Target },
   { href: "/(app)/use-cases/portfolio-projection", label: "ภาพรวม", icon: Activity },
   { href: "/(app)/scenarios", label: "Scenarios", icon: GitCompare },
+];
+
+const analysisItems = [
+  { href: "/(app)/analysis/insurance-gap", label: "ช่องว่างคุ้มครอง", icon: ShieldAlert },
+  { href: "/(app)/analysis/emergency-fund", label: "กองทุนฉุกเฉิน", icon: Wallet },
+  { href: "/(app)/analysis/tax", label: "วางแผนภาษี", icon: Receipt },
+  { href: "/(app)/analysis/stress-test", label: "ทดสอบความเครียด", icon: AlertTriangle },
+  { href: "/(app)/analysis/debt", label: "กลยุทธ์หนี้สิน", icon: CreditCard },
 ];
 
 const colors = [
@@ -102,6 +114,25 @@ export default function Home() {
                   style={{ background: "var(--bg-surface)" }}>
                   <CardContent className="flex items-center gap-3 p-4">
                     <Icon className="h-5 w-5 shrink-0" style={{ color: "var(--gold-500)" }} />
+                    <span className="text-sm font-medium">{label}</span>
+                    <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground" />
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Analysis ── */}
+        <section>
+          <SectionTitle>Analysis Modules</SectionTitle>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {analysisItems.map(({ href, label, icon: Icon }) => (
+              <Link key={href} href={href}>
+                <Card className="h-full cursor-pointer border-border transition-all duration-300 hover:border-[rgba(251,113,133,0.4)] hover:shadow-[0_0_24px_rgba(251,113,133,0.1)] active:scale-[0.97]"
+                  style={{ background: "var(--bg-surface)" }}>
+                  <CardContent className="flex items-center gap-3 p-4">
+                    <Icon className="h-5 w-5 shrink-0" style={{ color: "#fb7185" }} />
                     <span className="text-sm font-medium">{label}</span>
                     <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground" />
                   </CardContent>
