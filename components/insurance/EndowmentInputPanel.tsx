@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
+import { useCallback } from "react";
+import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,10 +10,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { CurrencyInput } from "@/components/inputs/CurrencyInput";
 import type { EndowmentPolicy } from "@/types/insurance";
 
-function linearCashValues(years: number, finalValue: number): number[] {
-  return Array.from({ length: years }, (_, i) =>
-    Math.round((finalValue / years) * (i + 1))
-  );
+/** S-curve cash value table: slow start, final-year spike to maturityValue. */
+function defaultCashValues(years: number, maturityValue: number): number[] {
+  return Array.from({ length: years }, (_, i) => {
+    if (i === years - 1) return maturityValue;
+    const t = (i + 1) / years;
+    const fraction = t * t * (3 - 2 * t) * 0.55;
+    return Math.round(maturityValue * fraction);
+  });
 }
 
 interface EndowmentInputPanelProps {
@@ -31,8 +35,6 @@ export function EndowmentInputPanel({
   draft, savedPolicies, selectedId,
   onChange, onSave, onSelect, onAddNew, onDelete,
 }: EndowmentInputPanelProps) {
-  const [showCashValues, setShowCashValues] = useState(false);
-
   const set = useCallback(
     <K extends keyof EndowmentPolicy>(key: K, value: EndowmentPolicy[K]) =>
       onChange({ ...draft, [key]: value }),
@@ -42,7 +44,7 @@ export function EndowmentInputPanel({
   const handleCoverageChange = (years: number) => {
     const currentMaturity =
       draft.cashValueByYear[draft.coveragePeriodYears - 1] ?? draft.sumInsured;
-    const newTable = linearCashValues(years, currentMaturity);
+    const newTable = defaultCashValues(years, currentMaturity);
     onChange({ ...draft, coveragePeriodYears: years, cashValueByYear: newTable });
   };
 
@@ -51,14 +53,8 @@ export function EndowmentInputPanel({
   };
 
   const handleMaturityValueChange = (value: number) => {
-    const newTable = linearCashValues(draft.coveragePeriodYears, value);
+    const newTable = defaultCashValues(draft.coveragePeriodYears, value);
     onChange({ ...draft, cashValueByYear: newTable });
-  };
-
-  const handleCashValueChange = (yearIndex: number, value: number) => {
-    const updated = [...draft.cashValueByYear];
-    updated[yearIndex] = value;
-    set("cashValueByYear", updated);
   };
 
   const isNew = selectedId === null;
@@ -193,48 +189,6 @@ export function EndowmentInputPanel({
           onChange={(v) => set("projectedMaturityValue", v > 0 ? v : undefined)}
           placeholder="กรอกถ้ามีจากตารางประมาณการ"
         />
-
-        {/* Cash value table */}
-        <div>
-          <button
-            className="flex items-center justify-between w-full py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            onClick={() => setShowCashValues(!showCashValues)}
-          >
-            <span>ตารางเงินคืนรายปี (จากสัญญา)</span>
-            {showCashValues ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </button>
-          {showCashValues && (
-            <div
-              className="mt-2 rounded-lg overflow-hidden"
-              style={{ border: "1px solid var(--border)" }}
-            >
-              <div className="grid grid-cols-3 px-3 py-2 text-xs font-semibold text-muted-foreground" style={{ background: "var(--bg-surface)" }}>
-                <span>ปีที่</span><span>อายุ</span><span className="text-right">เงินคืน</span>
-              </div>
-              <ScrollArea className="max-h-56">
-                <div className="divide-y" style={{ borderColor: "var(--border)" }}>
-                  {draft.cashValueByYear.map((cv, i) => (
-                    <div key={i} className="grid grid-cols-3 items-center px-3 py-1.5" style={{ background: i % 2 === 0 ? "var(--bg-surface)" : "transparent" }}>
-                      <span className="text-xs text-muted-foreground">{i + 1}</span>
-                      <span className="text-xs text-muted-foreground">{draft.startAge + i}</span>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        defaultValue={cv.toLocaleString("th-TH")}
-                        onBlur={(e) => {
-                          const n = parseInt(e.target.value.replace(/,/g, ""), 10);
-                          if (!isNaN(n)) handleCashValueChange(i, n);
-                        }}
-                        className="text-xs text-right bg-transparent outline-none w-full focus:text-foreground"
-                        style={{ color: "var(--text-primary)", minWidth: 0 }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </div>
-          )}
-        </div>
 
         {/* Save button */}
         <Button

@@ -118,7 +118,7 @@ export function EndowmentChart({ policy, currentAge }: EndowmentChartProps) {
         style={{ height: 320, background: "var(--bg-surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-card)" }}
       >
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 0 }}>
+          <ComposedChart data={chartData} margin={{ top: 28, right: 16, left: 8, bottom: 0 }}>
             <defs>
               <linearGradient id="gradPremium" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="var(--rose-500)" stopOpacity={0.25} />

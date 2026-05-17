@@ -10,9 +10,16 @@ import { useInsuranceStore } from "@/lib/store/insurance";
 import { DEMO_ENDOWMENT } from "@/lib/data/demo-data";
 import type { EndowmentPolicy } from "@/types/insurance";
 
+function sCashValues(years: number, maturityValue: number): number[] {
+  return Array.from({ length: years }, (_, i) => {
+    if (i === years - 1) return maturityValue;
+    const t = (i + 1) / years;
+    return Math.round(maturityValue * t * t * (3 - 2 * t) * 0.55);
+  });
+}
+
 function blankPolicy(): EndowmentPolicy {
   const years = 20;
-  const deathBenefit = 1_200_000;
   const maturityValue = 1_200_000;
   return {
     id: crypto.randomUUID(),
@@ -22,10 +29,8 @@ function blankPolicy(): EndowmentPolicy {
     yearlyPremium: 50000,
     paymentPeriodYears: years,
     coveragePeriodYears: years,
-    sumInsured: deathBenefit,
-    cashValueByYear: Array.from({ length: years }, (_, i) =>
-      Math.round((maturityValue / years) * (i + 1))
-    ),
+    sumInsured: maturityValue,
+    cashValueByYear: sCashValues(years, maturityValue),
   };
 }
 
@@ -42,16 +47,23 @@ export default function EndowmentPage() {
   const [draft, setDraft] = useState<EndowmentPolicy>(DEMO_ENDOWMENT);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  // Seed demo data on first visit if store is empty
+  // Seed demo on first visit; always restore demo cash values to fix stale localStorage data
   useEffect(() => {
     if (endowmentPolicies.length === 0) {
       addPolicy(DEMO_ENDOWMENT);
       setSelectedId(DEMO_ENDOWMENT.id);
       setDraft(DEMO_ENDOWMENT);
     } else {
+      const demoInStore = endowmentPolicies.find((p) => p.id === DEMO_ENDOWMENT.id);
+      if (demoInStore) {
+        updatePolicy(DEMO_ENDOWMENT.id, { cashValueByYear: DEMO_ENDOWMENT.cashValueByYear });
+      }
       const first = endowmentPolicies[0];
+      const restored = first.id === DEMO_ENDOWMENT.id
+        ? { ...first, cashValueByYear: DEMO_ENDOWMENT.cashValueByYear }
+        : first;
       setSelectedId(first.id);
-      setDraft(first);
+      setDraft(restored);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
