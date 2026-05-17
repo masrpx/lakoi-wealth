@@ -2,11 +2,11 @@
 
 import { useMemo } from "react";
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
+  ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ReferenceLine, ReferenceDot, ResponsiveContainer, Legend,
 } from "recharts";
 import type { EndowmentPolicy } from "@/types/insurance";
-import { calculateEndowmentMetrics, calculateEndowmentTimeline } from "@/lib/calculations/endowment";
+import { calculateEndowmentMetrics, calculateEndowmentTimeline, totalDeathBenefitAtAge } from "@/lib/calculations/endowment";
 import { InsightCallout } from "./InsightCallout";
 
 interface EndowmentChartProps {
@@ -64,15 +64,17 @@ export function EndowmentChart({ policy, currentAge }: EndowmentChartProps) {
     () => timeline.map((r) => ({
       age: r.age,
       "เบี้ยสะสม": r.cumulativePaid,
-      "เงินคืน (รับประกัน)": r.cashValue,
+      "มูลค่าเวนคืน": r.cashValue,
+      "ทุนประกัน": totalDeathBenefitAtAge(policy, r.age),
     })),
-    [timeline]
+    [timeline, policy]
   );
 
   const yAxisMax = useMemo(() => {
     const dataMax = Math.max(
       ...chartData.map((d) => d["เบี้ยสะสม"]),
-      ...chartData.map((d) => d["เงินคืน (รับประกัน)"]),
+      ...chartData.map((d) => d["มูลค่าเวนคืน"]),
+      ...chartData.map((d) => d["ทุนประกัน"]),
       policy.projectedMaturityValue ?? 0,
     );
     return Math.ceil(dataMax * 1.18);
@@ -91,7 +93,13 @@ export function EndowmentChart({ policy, currentAge }: EndowmentChartProps) {
           color="var(--rose-500)"
         />
         <KpiCard
-          label={metrics.projectedMaturityValue ? "เงินคืนรวมปันผล (ประมาณ)" : "เงินคืน (รับประกัน)"}
+          label="ทุนประกัน (ชีวิต)"
+          value={fmtBaht(policy.sumInsured)}
+          sub="คงที่ตลอดสัญญา"
+          color="var(--gold-500)"
+        />
+        <KpiCard
+          label={metrics.projectedMaturityValue ? "เงินคืน + ปันผล (ประมาณ)" : "เงินคืนครบสัญญา"}
           value={fmtBaht(valueDisplay)}
           sub={metrics.projectedMaturityValue ? `รับประกัน ${fmtBaht(metrics.finalCashValue)}` : undefined}
           color="var(--teal-500)"
@@ -100,7 +108,7 @@ export function EndowmentChart({ policy, currentAge }: EndowmentChartProps) {
           label="ผลตอบแทน (IRR)"
           value={`${(irrDisplay * 100).toFixed(2)}%`}
           sub={metrics.projectedIRR ? "จากประมาณการ" : "จากรับประกัน"}
-          color="var(--gold-500)"
+          color="var(--blue-500)"
         />
       </div>
 
@@ -110,7 +118,7 @@ export function EndowmentChart({ policy, currentAge }: EndowmentChartProps) {
         style={{ height: 320, background: "var(--bg-surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-card)" }}
       >
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 0 }}>
+          <ComposedChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 0 }}>
             <defs>
               <linearGradient id="gradPremium" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="var(--rose-500)" stopOpacity={0.25} />
@@ -151,19 +159,28 @@ export function EndowmentChart({ policy, currentAge }: EndowmentChartProps) {
             />
             <Area
               type="monotone"
-              dataKey="เงินคืน (รับประกัน)"
+              dataKey="มูลค่าเวนคืน"
               stroke="var(--teal-500)"
               strokeWidth={3}
               fill="url(#gradCash)"
               isAnimationActive={false}
             />
+            <Line
+              type="stepAfter"
+              dataKey="ทุนประกัน"
+              stroke="var(--gold-500)"
+              strokeWidth={3}
+              strokeDasharray="6 3"
+              dot={false}
+              isAnimationActive={false}
+            />
             {crossoverAge !== null && (
               <ReferenceLine
                 x={crossoverAge}
-                stroke="var(--gold-500)"
-                strokeWidth={1.5}
+                stroke="var(--text-muted)"
+                strokeWidth={1}
                 strokeDasharray="4 3"
-                label={{ value: `คุ้มทุน อายุ ${crossoverAge}`, position: "top", fontSize: 11, fill: "var(--gold-500)" }}
+                label={{ value: `คุ้มทุน อายุ ${crossoverAge}`, position: "top", fontSize: 11, fill: "var(--text-muted)" }}
               />
             )}
             {policy.projectedMaturityValue && (
@@ -171,13 +188,13 @@ export function EndowmentChart({ policy, currentAge }: EndowmentChartProps) {
                 x={policy.startAge + policy.coveragePeriodYears - 1}
                 y={policy.projectedMaturityValue}
                 r={6}
-                fill="var(--gold-500)"
+                fill="var(--teal-500)"
                 stroke="white"
                 strokeWidth={2}
-                label={{ value: `${fmtY(policy.projectedMaturityValue)} (รวมปันผล)`, position: "top", fontSize: 10, fill: "var(--gold-500)" }}
+                label={{ value: `${fmtY(policy.projectedMaturityValue)} (รวมปันผล)`, position: "top", fontSize: 10, fill: "var(--teal-500)" }}
               />
             )}
-          </AreaChart>
+          </ComposedChart>
         </ResponsiveContainer>
       </div>
 

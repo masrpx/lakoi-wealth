@@ -139,8 +139,8 @@ export function EndowmentInputPanel({
             value={draft.paymentPeriodYears}
             min={1} max={30} step={1}
             onChange={(e) => set("paymentPeriodYears", Math.min(Number(e.target.value), draft.coveragePeriodYears))}
-            className="w-full h-1.5 rounded-full appearance-none cursor-pointer my-1"
-            style={{ accentColor: "var(--gold-500)" }}
+            className="w-full cursor-pointer my-1"
+            style={{ "--slider-fill": `${((draft.paymentPeriodYears - 1) / 29) * 100}%` } as React.CSSProperties}
           />
         </div>
 
@@ -155,21 +155,24 @@ export function EndowmentInputPanel({
             value={draft.coveragePeriodYears}
             min={draft.paymentPeriodYears} max={99} step={1}
             onChange={(e) => handleCoverageChange(Number(e.target.value))}
-            className="w-full h-1.5 rounded-full appearance-none cursor-pointer my-1"
-            style={{ accentColor: "var(--gold-500)" }}
+            className="w-full cursor-pointer my-1"
+            style={{ "--slider-fill": `${((draft.coveragePeriodYears - draft.paymentPeriodYears) / Math.max(1, 99 - draft.paymentPeriodYears)) * 100}%` } as React.CSSProperties}
           />
         </div>
 
         {/* Sum insured */}
-        <CurrencyInput
-          label="ทุนประกัน (เงินคืนรับประกัน)"
-          value={draft.sumInsured}
-          onChange={handleSumInsuredChange}
-        />
+        <div className="space-y-1">
+          <CurrencyInput
+            label="ทุนประกัน (ความคุ้มครองชีวิต)"
+            value={draft.sumInsured}
+            onChange={handleSumInsuredChange}
+          />
+          <p className="text-xs text-muted-foreground px-0.5">คงที่ตลอดสัญญา — เงินที่จ่ายหากเสียชีวิต</p>
+        </div>
 
         {/* Projected maturity value */}
         <CurrencyInput
-          label="เงินคืนรวมเงินปันผล (ประมาณการ — ไม่บังคับ)"
+          label="เงินคืนครบสัญญา + ปันผล (ประมาณการ)"
           value={draft.projectedMaturityValue ?? 0}
           onChange={(v) => set("projectedMaturityValue", v > 0 ? v : undefined)}
           placeholder="กรอกถ้ามีจากตารางประมาณการ"

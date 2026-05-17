@@ -22,11 +22,14 @@ export interface EndowmentPolicy extends InsurancePolicyBase {
   yearlyPremium: number;
   paymentPeriodYears: number;
   coveragePeriodYears: number;
+  /** Death benefit — paid if insured dies at any point during coverage. Constant throughout. */
   sumInsured: number;
   /** Guaranteed year-by-year cash value from insurer illustration. index 0 = policy year 1. */
   cashValueByYear: number[];
   /** Total projected payout at maturity including non-guaranteed dividends. User inputs from insurer's projected scenario. */
   projectedMaturityValue?: number;
+  /** Term riders stacked on top for additional death coverage during specific age ranges. */
+  termRiders?: TermRider[];
 }
 
 // ─── Health ──────────────────────────────────────────────────────────────────
@@ -65,6 +68,18 @@ export interface UnitLinkPolicy extends InsurancePolicyBase {
   /** Whole percentage, e.g. 1.5 = 1.5% of policy value per year. */
   costOfInsurance: number;
   withdrawals: ULWithdrawal | null;
+}
+
+// ─── Term Rider ───────────────────────────────────────────────────────────────
+
+export interface TermRider {
+  id: string;
+  name: string;
+  /** Additional death benefit this rider provides on top of the base policy */
+  sumInsured: number;
+  yearlyPremium: number;
+  startAge: number;
+  coverageYears: number;
 }
 
 // ─── Accident ─────────────────────────────────────────────────────────────────

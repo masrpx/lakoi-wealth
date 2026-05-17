@@ -1,6 +1,18 @@
 import type { EndowmentPolicy, EndowmentMetrics, EndowmentYearlyValue } from "@/types/insurance";
 
 /**
+ * Total death benefit at a given client age = base sumInsured + all active term riders at that age.
+ * Returns a step-function value — flat unless term riders cause jumps.
+ */
+export function totalDeathBenefitAtAge(policy: EndowmentPolicy, age: number): number {
+  const riders = policy.termRiders ?? [];
+  const riderTotal = riders
+    .filter((r) => age >= r.startAge && age < r.startAge + r.coverageYears)
+    .reduce((sum, r) => sum + r.sumInsured, 0);
+  return policy.sumInsured + riderTotal;
+}
+
+/**
  * Bisection method to find IRR — the rate where NPV of all cash flows = 0.
  * cashflows[t] = net cash flow at time t (negative = outflow, positive = inflow).
  */
