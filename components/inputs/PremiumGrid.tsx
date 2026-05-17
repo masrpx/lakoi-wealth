@@ -17,8 +17,14 @@ function fmtBaht(n: number): string {
   return `฿${n.toLocaleString("th-TH")}`;
 }
 
+// Band-aligned key ages: 1, 6, 11, 16, 21, 26, 31, 36... (matches 21–25, 26–30, 31–35 band scheme)
+function isKeyAge(age: number): boolean {
+  return (age - 1) % 5 === 0;
+}
+
 export function PremiumGrid({ sparseInputs, startAge, endAge, onChange }: PremiumGridProps) {
   const [mode, setMode] = useState<"smart" | "detailed">("smart");
+  const [show80Plus, setShow80Plus] = useState(false);
 
   const filledGrid = useMemo(
     () => fillHealthPremiumGrid(sparseInputs, startAge, endAge),
@@ -30,25 +36,26 @@ export function PremiumGrid({ sparseInputs, startAge, endAge, onChange }: Premiu
     [filledGrid]
   );
 
-  // Smart mode: 5-year marks + any non-5-year explicit entries
+  // Smart mode: band-aligned key ages + any non-key explicit entries
   const smartAges = useMemo(() => {
     const marks: number[] = [];
     for (let a = startAge; a <= endAge; a++) {
-      if (a % 5 === 0) marks.push(a);
+      if (isKeyAge(a)) marks.push(a);
     }
     const extraExplicit = Object.keys(sparseInputs)
       .map(Number)
-      .filter((a) => a >= startAge && a <= endAge && a % 5 !== 0);
+      .filter((a) => a >= startAge && a <= endAge && !isKeyAge(a));
     return [...new Set([...marks, ...extraExplicit])].sort((a, b) => a - b);
   }, [sparseInputs, startAge, endAge]);
+
+  const mainSmartAges = useMemo(() => smartAges.filter(a => a < 80), [smartAges]);
+  const oldSmartAges  = useMemo(() => smartAges.filter(a => a >= 80), [smartAges]);
 
   // Detailed mode: every age
   const allAges = useMemo(
     () => Array.from({ length: endAge - startAge + 1 }, (_, i) => startAge + i),
     [startAge, endAge]
   );
-
-  const visibleAges = mode === "smart" ? smartAges : allAges;
 
   const promote = (age: number) => {
     const interpolated = filledGrid[age] ?? 0;
@@ -66,6 +73,26 @@ export function PremiumGrid({ sparseInputs, startAge, endAge, onChange }: Premiu
     const value = isNaN(n) ? 0 : n;
     onChange({ ...sparseInputs, [age]: value });
   };
+
+  const renderRows = (ages: number[]) =>
+    ages.map((age) => {
+      const isExplicit = sparseInputs[age] !== undefined;
+      const interpolated = filledGrid[age] ?? 0;
+      const canDemote = isExplicit && !isKeyAge(age) && mode === "detailed";
+
+      return (
+        <PremiumRow
+          key={age}
+          age={age}
+          value={interpolated}
+          isExplicit={isExplicit}
+          canDemote={canDemote}
+          onPromote={() => promote(age)}
+          onDemote={() => demote(age)}
+          onChangeValue={(raw) => updateValue(age, raw)}
+        />
+      );
+    });
 
   return (
     <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
@@ -106,25 +133,32 @@ export function PremiumGrid({ sparseInputs, startAge, endAge, onChange }: Premiu
       {/* Rows */}
       <ScrollArea style={{ maxHeight: 320 }}>
         <div>
-          {visibleAges.map((age) => {
-            const isExplicit = sparseInputs[age] !== undefined;
-            const interpolated = filledGrid[age] ?? 0;
-            const isKeyAge = age % 5 === 0;
-            const canDemote = isExplicit && !isKeyAge && mode === "detailed";
+          {mode === "detailed" ? (
+            renderRows(allAges)
+          ) : (
+            <>
+              {renderRows(mainSmartAges)}
 
-            return (
-              <PremiumRow
-                key={age}
-                age={age}
-                value={interpolated}
-                isExplicit={isExplicit}
-                canDemote={canDemote}
-                onPromote={() => promote(age)}
-                onDemote={() => demote(age)}
-                onChangeValue={(raw) => updateValue(age, raw)}
-              />
-            );
-          })}
+              {/* 80+ toggle */}
+              {endAge >= 80 && (
+                <>
+                  {show80Plus && renderRows(oldSmartAges)}
+                  <button
+                    type="button"
+                    className="w-full px-3 text-xs text-center transition-colors hover:bg-black/[0.03]"
+                    style={{
+                      minHeight: 40,
+                      borderTop: "1px dashed var(--border)",
+                      color: "var(--text-muted)",
+                    }}
+                    onClick={() => setShow80Plus((v) => !v)}
+                  >
+                    {show80Plus ? "ซ่อน 80–99 ▲" : "แสดงอายุ 80–99 ▼"}
+                  </button>
+                </>
+              )}
+            </>
+          )}
         </div>
       </ScrollArea>
     </div>
@@ -149,7 +183,6 @@ function PremiumRow({ age, value, isExplicit, canDemote, onPromote, onDemote, on
 
   const handleAutoRowClick = () => {
     onPromote();
-    // Focus the input after promotion on next tick
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 

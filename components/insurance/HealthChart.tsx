@@ -1,16 +1,18 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   BarChart, Bar, Cell,
   AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { Button } from "@/components/ui/button";
 import type { HealthPolicy } from "@/types/insurance";
 import {
   fillHealthPremiumGrid,
   buildHealthPremiumSchedule,
+  calculateHealthTotalPaid,
 } from "@/lib/calculations/health-premium";
 
 interface HealthChartProps {
@@ -79,10 +81,41 @@ export function HealthChart({ policy }: HealthChartProps) {
     [policy]
   );
 
-  const schedule = useMemo(
-    () => buildHealthPremiumSchedule({ ...policy, yearlyPremiumByAge: filledGrid }),
+  const filledPolicy = useMemo(
+    () => ({ ...policy, yearlyPremiumByAge: filledGrid }),
     [policy, filledGrid]
   );
+
+  const schedule = useMemo(
+    () => buildHealthPremiumSchedule(filledPolicy),
+    [filledPolicy]
+  );
+
+  // Range sum state
+  const [rangeFrom, setRangeFrom] = useState(policy.startAge);
+  const [rangeTo,   setRangeTo]   = useState(policy.endAge);
+
+  useEffect(() => {
+    setRangeFrom(policy.startAge);
+    setRangeTo(policy.endAge);
+  }, [policy.startAge, policy.endAge]);
+
+  const rangeTotal = useMemo(
+    () => calculateHealthTotalPaid(filledPolicy, rangeFrom, rangeTo),
+    [filledPolicy, rangeFrom, rangeTo]
+  );
+
+  // Bar chart uses band-aligned key ages: (age - 1) % 5 === 0
+  const checkpointData = useMemo(() => {
+    const ticks: { age: number; premium: number; cumulativePaid: number; inRange: boolean }[] = [];
+    for (let a = policy.startAge; a <= policy.endAge; a++) {
+      if ((a - 1) % 5 === 0) {
+        const row = schedule.find(r => r.age === a);
+        if (row) ticks.push({ ...row, inRange: row.age >= rangeFrom && row.age <= rangeTo });
+      }
+    }
+    return ticks;
+  }, [schedule, policy.startAge, policy.endAge, rangeFrom, rangeTo]);
 
   const totalPremium = schedule.length > 0 ? schedule[schedule.length - 1].cumulativePaid : 0;
   const years = policy.endAge - policy.startAge + 1;
@@ -95,12 +128,14 @@ export function HealthChart({ policy }: HealthChartProps) {
   const xAxisTicks = useMemo(() => {
     const ticks: number[] = [];
     for (let a = policy.startAge; a <= policy.endAge; a++) {
-      if (a % 5 === 0) ticks.push(a);
+      if ((a - 1) % 5 === 0) ticks.push(a);
     }
     return ticks;
   }, [policy.startAge, policy.endAge]);
 
   const isEmpty = schedule.every((r) => r.premium === 0);
+
+  const isFullRange = rangeFrom === policy.startAge && rangeTo === policy.endAge;
 
   return (
     <div className="flex flex-col h-full gap-4 p-4 overflow-y-auto">
@@ -126,6 +161,60 @@ export function HealthChart({ policy }: HealthChartProps) {
         />
       </div>
 
+      {/* Range sum selector */}
+      <div
+        className="rounded-xl p-3 flex flex-wrap items-center gap-3"
+        style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
+      >
+        <span className="text-xs font-semibold uppercase tracking-wider shrink-0" style={{ color: "var(--text-muted)" }}>
+          ช่วงอายุ
+        </span>
+
+        {/* From stepper */}
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-9 w-9 shrink-0"
+            onClick={() => setRangeFrom(Math.max(policy.startAge, rangeFrom - 1))}
+          >−</Button>
+          <span className="text-sm font-bold w-8 text-center">{rangeFrom}</span>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-9 w-9 shrink-0"
+            onClick={() => setRangeFrom(Math.min(rangeTo - 1, rangeFrom + 1))}
+          >+</Button>
+        </div>
+
+        <span className="text-xs text-muted-foreground">ถึง</span>
+
+        {/* To stepper */}
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-9 w-9 shrink-0"
+            onClick={() => setRangeTo(Math.max(rangeFrom + 1, rangeTo - 1))}
+          >−</Button>
+          <span className="text-sm font-bold w-8 text-center">{rangeTo}</span>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-9 w-9 shrink-0"
+            onClick={() => setRangeTo(Math.min(policy.endAge, rangeTo + 1))}
+          >+</Button>
+        </div>
+
+        {/* Range total */}
+        <div className="ml-auto text-right">
+          <p className="text-xs text-muted-foreground">รวม {rangeTo - rangeFrom + 1} ปี</p>
+          <p className="text-base font-bold" style={{ color: "var(--gold-500)" }}>
+            {fmtBahtShort(rangeTotal)}
+          </p>
+        </div>
+      </div>
+
       {isEmpty ? (
         <div
           className="flex-1 rounded-xl flex flex-col items-center justify-center gap-2"
@@ -136,16 +225,16 @@ export function HealthChart({ policy }: HealthChartProps) {
         </div>
       ) : (
         <>
-          {/* Bar chart — yearly premium */}
+          {/* Bar chart — checkpoint premiums */}
           <div
             className="rounded-xl p-4"
             style={{ height: 260, background: "var(--bg-surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-card)" }}
           >
             <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
-              เบี้ยรายปี ตามอายุ
+              เบี้ยรายช่วง 5 ปี
             </p>
             <ResponsiveContainer width="100%" height="85%">
-              <BarChart data={schedule} margin={{ top: 4, right: 8, left: 0, bottom: 0 }} barCategoryGap="10%">
+              <BarChart data={checkpointData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }} barCategoryGap="15%">
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis
                   dataKey="age"
@@ -162,16 +251,20 @@ export function HealthChart({ policy }: HealthChartProps) {
                   width={52}
                 />
                 <Tooltip content={<BarTooltip />} cursor={{ fill: "rgba(0,0,0,0.04)" }} />
-                <Bar dataKey="premium" radius={[2, 2, 0, 0]} isAnimationActive={false}>
-                  {schedule.map((row) => (
-                    <Cell key={row.age} fill={barColor(row.age)} fillOpacity={0.85} />
+                <Bar dataKey="premium" radius={[3, 3, 0, 0]} isAnimationActive={false}>
+                  {checkpointData.map((row) => (
+                    <Cell
+                      key={row.age}
+                      fill={barColor(row.age)}
+                      fillOpacity={isFullRange || row.inRange ? 0.9 : 0.2}
+                    />
                   ))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Cumulative area chart */}
+          {/* Cumulative area chart — full schedule (smooth) */}
           <div
             className="rounded-xl p-4"
             style={{ height: 160, background: "var(--bg-surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-card)" }}
