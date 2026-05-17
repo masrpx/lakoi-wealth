@@ -20,6 +20,7 @@ import {
   ArrowRight,
   Sparkles,
   User,
+  Activity,
 } from "lucide-react";
 
 const navItems = [
@@ -31,6 +32,7 @@ const navItems = [
   { href: "/(app)/insurance/unit-link", label: "Unit Link", icon: TrendingUp },
   { href: "/(app)/portfolio", label: "Portfolio", icon: TrendingUp },
   { href: "/(app)/goals", label: "Goals", icon: Target },
+  { href: "/(app)/use-cases/portfolio-projection", label: "ภาพรวม", icon: Activity },
   { href: "/(app)/scenarios", label: "Scenarios", icon: GitCompare },
 ];
 

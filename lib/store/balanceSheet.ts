@@ -27,6 +27,9 @@ interface BalanceSheetState {
   setGrowthAssumptions(propertyRate: number, goldRate: number): void;
 
   setInvestments(items: InvestmentItem[]): void;
+  addInvestment(inv: InvestmentItem): void;
+  updateInvestment(id: string, updates: Partial<InvestmentItem>): void;
+  removeInvestment(id: string): void;
   updateInvestmentDCA(id: string, monthlyDCA: number): void;
 
   addCustomExpense(item: CustomExpenseItem): void;
@@ -84,6 +87,19 @@ export const useBalanceSheetStore = create<BalanceSheetState>()(
         set({ propertyGrowthRate, goldGrowthRate }),
 
       setInvestments: (investments) => set({ investments }),
+
+      addInvestment: (inv) =>
+        set((s) => ({ investments: [...s.investments, inv] })),
+
+      updateInvestment: (id, updates) =>
+        set((s) => ({
+          investments: s.investments.map((inv) =>
+            inv.id === id ? { ...inv, ...updates } : inv
+          ),
+        })),
+
+      removeInvestment: (id) =>
+        set((s) => ({ investments: s.investments.filter((inv) => inv.id !== id) })),
 
       updateInvestmentDCA: (id, monthlyDCA) =>
         set((s) => ({
