@@ -97,13 +97,18 @@ export function HealthChart({ policy }: HealthChartProps) {
     [policy]
   );
 
-  // Range sum state
+  // Range sum state — numeric values
   const [rangeFrom, setRangeFrom] = useState(policy.startAge);
   const [rangeTo,   setRangeTo]   = useState(policy.endAge);
+  // Local text state so the user can type freely without clamping on each keystroke
+  const [fromText, setFromText] = useState(String(policy.startAge));
+  const [toText,   setToText]   = useState(String(policy.endAge));
 
   useEffect(() => {
     setRangeFrom(policy.startAge);
     setRangeTo(policy.endAge);
+    setFromText(String(policy.startAge));
+    setToText(String(policy.endAge));
   }, [policy.startAge, policy.endAge]);
 
   const rangeTotal = useMemo(
@@ -139,14 +144,18 @@ export function HealthChart({ policy }: HealthChartProps) {
 
   const isFullRange = rangeFrom === policy.startAge && rangeTo === policy.endAge;
 
-  const handleFromChange = (raw: string) => {
+  const commitFrom = (raw: string) => {
     const n = parseInt(raw, 10);
-    if (!isNaN(n)) setRangeFrom(Math.max(policy.startAge, Math.min(n, rangeTo - 1)));
+    const clamped = isNaN(n) ? policy.startAge : Math.max(policy.startAge, Math.min(n, rangeTo - 1));
+    setRangeFrom(clamped);
+    setFromText(String(clamped));
   };
 
-  const handleToChange = (raw: string) => {
+  const commitTo = (raw: string) => {
     const n = parseInt(raw, 10);
-    if (!isNaN(n)) setRangeTo(Math.min(policy.endAge, Math.max(n, rangeFrom + 1)));
+    const clamped = isNaN(n) ? policy.endAge : Math.min(policy.endAge, Math.max(n, rangeFrom + 1));
+    setRangeTo(clamped);
+    setToText(String(clamped));
   };
 
   return (
@@ -184,11 +193,12 @@ export function HealthChart({ policy }: HealthChartProps) {
 
         <div className="flex items-center gap-2">
           <input
-            type="number"
-            value={rangeFrom}
-            min={policy.startAge}
-            max={rangeTo - 1}
-            onChange={(e) => handleFromChange(e.target.value)}
+            type="text"
+            inputMode="numeric"
+            value={fromText}
+            onChange={(e) => setFromText(e.target.value)}
+            onBlur={(e) => commitFrom(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && commitFrom(fromText)}
             className="w-16 text-sm font-bold text-center rounded-lg px-2 outline-none"
             style={{
               height: 36,
@@ -199,11 +209,12 @@ export function HealthChart({ policy }: HealthChartProps) {
           />
           <span className="text-xs text-muted-foreground">ถึง</span>
           <input
-            type="number"
-            value={rangeTo}
-            min={rangeFrom + 1}
-            max={policy.endAge}
-            onChange={(e) => handleToChange(e.target.value)}
+            type="text"
+            inputMode="numeric"
+            value={toText}
+            onChange={(e) => setToText(e.target.value)}
+            onBlur={(e) => commitTo(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && commitTo(toText)}
             className="w-16 text-sm font-bold text-center rounded-lg px-2 outline-none"
             style={{
               height: 36,

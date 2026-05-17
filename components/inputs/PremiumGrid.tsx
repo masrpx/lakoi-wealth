@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo, useRef } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { fillHealthPremiumGrid } from "@/lib/calculations/health-premium";
 
 interface PremiumGridProps {
@@ -127,37 +126,34 @@ export function PremiumGrid({ sparseInputs, startAge, endAge, onChange }: Premiu
         <span className="text-right">สถานะ</span>
       </div>
 
-      {/* Rows */}
-      <ScrollArea style={{ maxHeight: 320 }}>
-        <div>
-          {mode === "detailed" ? (
-            renderRows(allAges)
-          ) : (
+      {/* Rows — plain div so overflow-y actually works */}
+      <div className="overflow-y-auto" style={{ maxHeight: 320 }}>
+        {mode === "detailed"
+          ? renderRows(allAges)
+          : (
             <>
               {renderRows(mainSmartAges)}
-
-              {/* 80+ toggle */}
-              {endAge >= 80 && (
-                <>
-                  {show80Plus && renderRows(oldSmartAges)}
-                  <button
-                    type="button"
-                    className="w-full px-3 text-xs text-center transition-colors hover:bg-black/[0.03]"
-                    style={{
-                      minHeight: 40,
-                      borderTop: "1px dashed var(--border)",
-                      color: "var(--text-muted)",
-                    }}
-                    onClick={() => setShow80Plus((v) => !v)}
-                  >
-                    {show80Plus ? "ซ่อน 80–99 ▲" : "แสดงอายุ 80–99 ▼"}
-                  </button>
-                </>
-              )}
+              {show80Plus && renderRows(oldSmartAges)}
             </>
-          )}
-        </div>
-      </ScrollArea>
+          )
+        }
+      </div>
+
+      {/* 80+ toggle — outside scroll area so it's always visible */}
+      {mode === "smart" && endAge >= 80 && (
+        <button
+          type="button"
+          className="w-full px-3 text-xs text-center transition-colors hover:bg-black/[0.03]"
+          style={{
+            minHeight: 40,
+            borderTop: "1px dashed var(--border)",
+            color: "var(--text-muted)",
+          }}
+          onClick={() => setShow80Plus((v) => !v)}
+        >
+          {show80Plus ? "ซ่อน 80–99 ▲" : "แสดงอายุ 80–99 ▼"}
+        </button>
+      )}
     </div>
   );
 }
