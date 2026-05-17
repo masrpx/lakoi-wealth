@@ -75,13 +75,12 @@ function opacity(phase: HighlightPhase, own: HighlightPhase): number {
 export function BridgeFlowChart({ result, highlightPhase = null }: BridgeFlowChartProps) {
   const { dataPoints, maturityAge, healthRunwayAge, adjustedMaturityValue } = result;
 
-  // Compute Y-axis domain: accommodate negative premiums and positive lump sum
+  // Compute Y-axis domain — yMin must accommodate the stacked negative total
   const maxPositive = adjustedMaturityValue * 1.12;
-  const maxNegative = Math.max(
-    ...dataPoints.map((d) => Math.abs(d.endowmentPremium)),
-    ...dataPoints.map((d) => Math.abs(d.healthPremium)),
+  const maxStackedNegative = Math.max(
+    ...dataPoints.map((d) => Math.abs(d.endowmentPremium) + Math.abs(d.healthPremium)),
   );
-  const yMin = -maxNegative * 1.25;
+  const yMin = -maxStackedNegative * 1.35;
 
   // X-axis: show ticks every 5 years, aligned to age mod 5 === 0
   const xTicks: number[] = [];
@@ -162,10 +161,11 @@ export function BridgeFlowChart({ result, highlightPhase = null }: BridgeFlowCha
           />
         )}
 
-        {/* Endowment premium bars (rose, below zero) */}
+        {/* Endowment premium bars (rose, stacked below zero) */}
         <Bar
           dataKey="endowmentPremium"
           name="เบี้ยสะสมทรัพย์"
+          stackId="bridge"
           maxBarSize={18}
           isAnimationActive={false}
           fillOpacity={opacity(highlightPhase, "endowment")}
@@ -175,30 +175,32 @@ export function BridgeFlowChart({ result, highlightPhase = null }: BridgeFlowCha
           ))}
         </Bar>
 
-        {/* Lump sum bar (teal, above zero — the hero) */}
-        <Bar
-          dataKey="lumpSum"
-          name="เงินครบสัญญา"
-          maxBarSize={28}
-          isAnimationActive={false}
-          radius={[4, 4, 0, 0]}
-          fillOpacity={opacity(highlightPhase, "maturity")}
-        >
-          {dataPoints.map((d) => (
-            <Cell key={d.age} fill="#2dd4bf" />
-          ))}
-        </Bar>
-
-        {/* Health premium bars (dark rose, below zero) */}
+        {/* Health premium bars (dark rose, stacked below zero under endowment) */}
         <Bar
           dataKey="healthPremium"
           name="เบี้ยสุขภาพ"
+          stackId="bridge"
           maxBarSize={18}
           isAnimationActive={false}
           fillOpacity={opacity(highlightPhase, "health")}
         >
           {dataPoints.map((d) => (
             <Cell key={d.age} fill="#f43f5e" />
+          ))}
+        </Bar>
+
+        {/* Lump sum bar (teal, stacks upward from zero — the hero) */}
+        <Bar
+          dataKey="lumpSum"
+          name="เงินครบสัญญา"
+          stackId="bridge"
+          maxBarSize={18}
+          isAnimationActive={false}
+          radius={[4, 4, 0, 0]}
+          fillOpacity={opacity(highlightPhase, "maturity")}
+        >
+          {dataPoints.map((d) => (
+            <Cell key={d.age} fill="#2dd4bf" />
           ))}
         </Bar>
 

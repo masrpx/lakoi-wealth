@@ -360,29 +360,87 @@ export default function BridgePage() {
 
         {/* Outcome cards */}
         {result && (
-          <div className="flex gap-3 px-4 pb-4 flex-wrap">
-            <OutcomeCard
-              label="เบี้ยสะสมทรัพย์รวม"
-              value={fmtBahtShort(result.endowmentTotalPaid)}
-              sub={`${selectedEndowment.paymentPeriodYears} ปี × ${fmtBahtShort(selectedEndowment.yearlyPremium)}`}
-              color="#fb7185"
-              highlight={showOutcomeHighlight}
-            />
-            <OutcomeCard
-              label={`เงินคืนที่อายุ ${result.maturityAge} ปี`}
-              value={fmtBahtShort(result.adjustedMaturityValue)}
-              sub={sensitivity !== 0 ? `${sensitivity > 0 ? "+" : ""}${sensitivity}% จากฐาน` : "จากตารางกรมธรรม์"}
-              color="#2dd4bf"
-              highlight={showOutcomeHighlight}
-            />
-            <OutcomeCard
-              label="จ่ายเบี้ยสุขภาพได้ถึง"
-              value={`อายุ ${result.healthRunwayAge} ปี`}
-              sub={`${result.yearsOfCoverage} ปีของการคุ้มครอง`}
-              color="#c9a84c"
-              highlight={showOutcomeHighlight}
-            />
-          </div>
+          <>
+            <div className="flex gap-3 px-4 pb-3 flex-wrap">
+              <OutcomeCard
+                label="เบี้ยสะสมทรัพย์รวม"
+                value={fmtBahtShort(result.endowmentTotalPaid)}
+                sub={`${selectedEndowment.paymentPeriodYears} ปี × ${fmtBahtShort(selectedEndowment.yearlyPremium)}`}
+                color="#fb7185"
+                highlight={showOutcomeHighlight}
+              />
+              <OutcomeCard
+                label={`เงินคืนที่อายุ ${result.maturityAge} ปี`}
+                value={fmtBahtShort(result.adjustedMaturityValue)}
+                sub={sensitivity !== 0 ? `${sensitivity > 0 ? "+" : ""}${sensitivity}% จากฐาน` : "จากตารางกรมธรรม์"}
+                color="#2dd4bf"
+                highlight={showOutcomeHighlight}
+              />
+              <OutcomeCard
+                label="เบี้ยสุขภาพก่อนครบสัญญา"
+                value={fmtBahtShort(result.healthPreMaturityTotal)}
+                sub={`อายุ ${result.startAge}–${result.maturityAge - 1} จ่ายเอง`}
+                color="#f43f5e"
+                highlight={showOutcomeHighlight}
+              />
+              <OutcomeCard
+                label="จ่ายเบี้ยสุขภาพได้ถึง"
+                value={`อายุ ${result.healthRunwayAge} ปี`}
+                sub={`${result.yearsOfCoverage} ปีของการคุ้มครอง`}
+                color="#c9a84c"
+                highlight={showOutcomeHighlight}
+              />
+            </div>
+
+            {/* Maturity vs pre-maturity health comparison */}
+            {(() => {
+              const surplus = result.adjustedMaturityValue - result.healthPreMaturityTotal;
+              const covers = surplus >= 0;
+              const pct = Math.min(100, (result.healthPreMaturityTotal / result.adjustedMaturityValue) * 100);
+              return (
+                <div
+                  className="mx-4 mb-4 rounded-xl px-4 py-3"
+                  style={{
+                    background: covers ? "rgba(45,212,191,0.05)" : "rgba(244,63,94,0.05)",
+                    border: `1.5px solid ${covers ? "#2dd4bf44" : "#f43f5e44"}`,
+                  }}
+                >
+                  <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
+                    เงินครบสัญญา vs เบี้ยสุขภาพก่อนครบสัญญา
+                  </p>
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span style={{ color: "var(--text-secondary)" }}>เบี้ยสุขภาพก่อนครบสัญญา</span>
+                    <span className="font-semibold" style={{ color: "#f43f5e" }}>
+                      {fmtBahtShort(result.healthPreMaturityTotal)}
+                    </span>
+                  </div>
+                  <div className="relative rounded-full overflow-hidden mb-1" style={{ height: 8, background: "var(--border)" }}>
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{
+                        width: `${pct}%`,
+                        background: covers ? "#f43f5e" : "#f43f5e",
+                        opacity: 0.8,
+                      }}
+                    />
+                    {/* Maturity value marker at 100% */}
+                    <div className="absolute inset-y-0 right-0 w-0.5 rounded-full" style={{ background: "#2dd4bf" }} />
+                  </div>
+                  <div className="flex items-center justify-between text-xs mb-2">
+                    <span style={{ color: "var(--text-secondary)" }}>เงินครบสัญญา</span>
+                    <span className="font-semibold" style={{ color: "#2dd4bf" }}>
+                      {fmtBahtShort(result.adjustedMaturityValue)}
+                    </span>
+                  </div>
+                  <p className="text-sm font-semibold" style={{ color: covers ? "#2dd4bf" : "#f43f5e" }}>
+                    {covers
+                      ? `✓ เงินครบสัญญาเกินเบี้ยสุขภาพก่อนครบสัญญา ${fmtBahtShort(surplus)} — Bridge คุ้มค่า`
+                      : `⚠ เงินครบสัญญาขาด ${fmtBahtShort(Math.abs(surplus))} — พิจารณาเพิ่มทุนสะสมทรัพย์`}
+                  </p>
+                </div>
+              );
+            })()}
+          </>
         )}
 
         {/* Sensitivity slider */}

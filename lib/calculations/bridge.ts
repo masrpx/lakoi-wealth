@@ -22,6 +22,8 @@ export interface BridgeResult {
   /** Last age for which the fund fully covered the health premium. */
   healthRunwayAge: number;
   yearsOfCoverage: number;
+  /** Sum of health premiums paid out-of-pocket before the endowment matures. */
+  healthPreMaturityTotal: number;
   dataPoints: BridgeDataPoint[];
 }
 
@@ -55,6 +57,7 @@ export function calculateBridge(
   const dataPoints: BridgeDataPoint[] = [];
   let fundBalance: number | null = null;
   let healthRunwayAge = maturityAge;
+  let healthPreMaturityTotal = 0;
 
   for (let age = startAge; age <= endAge; age++) {
     const inPaymentPeriod =
@@ -68,9 +71,15 @@ export function calculateBridge(
     // Lump sum bar: only at maturity age
     const lumpSum = isMaturity ? adjustedMaturityValue : 0;
 
-    // Health premium: step-function from maturity onward
-    const rawHealth = age >= maturityAge ? getHealthPremiumAtAge(health.yearlyPremiumByAge, age) : 0;
+    // Health premium: full range of the health policy (shown as outflow throughout)
+    const rawHealth =
+      age >= Math.max(health.startAge, startAge)
+        ? getHealthPremiumAtAge(health.yearlyPremiumByAge, age)
+        : 0;
     const healthPremium = rawHealth > 0 ? -rawHealth : 0;
+
+    // Accumulate pre-maturity health cost (paid out of pocket before the bridge kicks in)
+    if (age < maturityAge && rawHealth > 0) healthPreMaturityTotal += rawHealth;
 
     // Fund balance: starts at adjustedMaturityValue at maturity, depletes each year
     if (isMaturity) {
@@ -107,6 +116,7 @@ export function calculateBridge(
     endowmentTotalPaid: endowment.yearlyPremium * endowment.paymentPeriodYears,
     healthRunwayAge,
     yearsOfCoverage: healthRunwayAge - maturityAge + 1,
+    healthPreMaturityTotal,
     dataPoints,
   };
 }
