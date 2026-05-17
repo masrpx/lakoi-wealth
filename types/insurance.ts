@@ -67,6 +67,8 @@ export interface UnitLinkPolicy extends InsurancePolicyBase {
   expectedReturn: number;
   /** Whole percentage, e.g. 1.5 = 1.5% of policy value per year. */
   costOfInsurance: number;
+  /** Annual fund management / admin fee as whole percentage (e.g. 1 = 1%). Defaults to 0 if absent. */
+  adminFee?: number;
   withdrawals: ULWithdrawal | null;
 }
 

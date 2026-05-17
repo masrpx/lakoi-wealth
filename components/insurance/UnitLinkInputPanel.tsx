@@ -280,14 +280,36 @@ export function UnitLinkInputPanel({
                     </div>
                   </div>
 
-                  {/* Net return preview */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <Label className="text-sm text-muted-foreground">ค่าธรรมเนียมกองทุน (Admin Fee)</Label>
+                      <span className="text-sm font-semibold" style={{ color: "var(--rose-500)" }}>
+                        {(draft.adminFee ?? 0).toFixed(2)}% ต่อปี
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      value={draft.adminFee ?? 0}
+                      min={0} max={3} step={0.25}
+                      onChange={(e) => set("adminFee", Number(e.target.value))}
+                      className="w-full cursor-pointer my-1"
+                      style={{ "--slider-fill": `${((draft.adminFee ?? 0) / 3) * 100}%` } as React.CSSProperties}
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>0%</span>
+                      <span>1.5%</span>
+                      <span>3%</span>
+                    </div>
+                  </div>
+
+                  {/* Net return preview — after all fees */}
                   <div
                     className="rounded-xl px-4 py-3 flex items-center justify-between"
                     style={{ background: "rgba(45,212,191,0.07)", border: "1px solid #2dd4bf33" }}
                   >
-                    <span className="text-xs text-muted-foreground">ผลตอบแทนสุทธิ (ประมาณ)</span>
+                    <span className="text-xs text-muted-foreground">ผลตอบแทนสุทธิ (หักทุกค่าธรรมเนียม)</span>
                     <span className="text-base font-bold" style={{ color: "#2dd4bf" }}>
-                      {Math.max(0, draft.expectedReturn - draft.costOfInsurance).toFixed(2)}% ต่อปี
+                      {Math.max(0, draft.expectedReturn - draft.costOfInsurance - (draft.adminFee ?? 0)).toFixed(2)}% ต่อปี
                     </span>
                   </div>
                 </>

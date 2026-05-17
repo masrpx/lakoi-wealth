@@ -53,9 +53,10 @@ export function calculateUnitLinkProjection(
 
     // ── Growth & charges ─────────────────────────────────────────────────────
     const startValue = prevEndValue + premiumPaid + topUpPaid;
-    // expectedReturn and costOfInsurance are stored as whole percentages (e.g. 7 = 7%)
+    // All rates stored as whole percentages (e.g. 7 = 7%)
     const growth = startValue * (expectedReturn / 100);
     const coiCharge = startValue * (costOfInsurance / 100);
+    const adminFeeCharge = startValue * ((policy.adminFee ?? 0) / 100);
 
     // ── Withdrawals ───────────────────────────────────────────────────────────
     let withdrawal = 0;
@@ -64,7 +65,7 @@ export function calculateUnitLinkProjection(
     }
 
     // ── End value (floor at 0 — policy lapses if value goes negative) ─────────
-    const endValue = Math.max(0, startValue + growth - coiCharge - withdrawal);
+    const endValue = Math.max(0, startValue + growth - coiCharge - adminFeeCharge - withdrawal);
 
     rows.push({
       year,

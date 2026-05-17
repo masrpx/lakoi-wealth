@@ -87,7 +87,9 @@ export default function ULLifetimePage() {
   // Sensitivity slider state (seeded from DEMO_UL)
   const [yearlyPremium, setYearlyPremium] = useState(DEMO_UL.regularYearlyPremium);
   const [recurringTopUp, setRecurringTopUp] = useState(DEMO_UL.recurringTopUp);
+  const [sumInsured, setSumInsured] = useState(DEMO_UL.sumInsured);
   const [expectedReturn, setExpectedReturn] = useState(DEMO_UL.expectedReturn);
+  const [adminFee, setAdminFee] = useState(DEMO_UL.adminFee ?? 0);
   const [withdrawalStartAge, setWithdrawalStartAge] = useState(DEMO_UL.withdrawals?.startAge ?? 60);
   const [withdrawalMonthly, setWithdrawalMonthly] = useState(DEMO_UL.withdrawals?.monthlyAmount ?? 30000);
   const [activeScenario, setActiveScenario] = useState<number | null>(null);
@@ -97,9 +99,11 @@ export default function ULLifetimePage() {
     ...DEMO_UL,
     regularYearlyPremium: yearlyPremium,
     recurringTopUp,
+    sumInsured,
     expectedReturn,
+    adminFee,
     withdrawals: { startAge: withdrawalStartAge, monthlyAmount: withdrawalMonthly },
-  }), [yearlyPremium, recurringTopUp, expectedReturn, withdrawalStartAge, withdrawalMonthly]);
+  }), [yearlyPremium, recurringTopUp, sumInsured, expectedReturn, adminFee, withdrawalStartAge, withdrawalMonthly]);
 
   // Key insight values
   const liveProjection = useMemo(
@@ -167,7 +171,7 @@ export default function ULLifetimePage() {
           className="grid grid-cols-3 gap-4 px-5 py-4"
           style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-surface)" }}
         >
-          {/* Column 1: Premium */}
+          {/* Column 1: Premium + Death Coverage */}
           <div className="space-y-4">
             <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
               เบี้ยและ Top-up
@@ -184,9 +188,15 @@ export default function ULLifetimePage() {
               fmt={fmtBahtK} color="var(--gold-500)"
               onChange={setRecurringTopUp}
             />
+            <SliderField
+              label="ทุนชีวิต"
+              value={sumInsured} min={500000} max={10000000} step={500000}
+              fmt={fmtBahtK} color="#c9a84c"
+              onChange={setSumInsured}
+            />
           </div>
 
-          {/* Column 2: Return scenarios */}
+          {/* Column 2: Return scenarios + Admin fee */}
           <div className="space-y-4">
             <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
               ผลตอบแทนคาดหวัง
@@ -220,6 +230,12 @@ export default function ULLifetimePage() {
                 </button>
               ))}
             </div>
+            <SliderField
+              label="ค่าธรรมเนียมกองทุน/ปี"
+              value={adminFee} min={0} max={3} step={0.25}
+              fmt={(v) => `${v.toFixed(2)}%`} color="#9f7aea"
+              onChange={setAdminFee}
+            />
           </div>
 
           {/* Column 3: Withdrawal */}
