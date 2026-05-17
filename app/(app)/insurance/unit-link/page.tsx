@@ -36,7 +36,6 @@ export default function UnitLinkPage() {
 
   const [draft, setDraft] = useState<UnitLinkPolicy>(DEMO_UL);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [targetAge, setTargetAge] = useState(0);
 
   useEffect(() => {
     if (ulPolicies.length === 0) {
@@ -64,7 +63,6 @@ export default function UnitLinkPage() {
   const handleAddNew = () => {
     setDraft(blankPolicy());
     setSelectedId(null);
-    setTargetAge(0);
   };
 
   const handleSave = () => {
@@ -123,13 +121,12 @@ export default function UnitLinkPage() {
           onSelect={handleSelect}
           onAddNew={handleAddNew}
           onDelete={handleDelete}
-          onTargetAgeChange={setTargetAge}
         />
       </div>
 
       {/* Chart — full width below */}
       <div className="flex-1">
-        <UnitLinkLifetimeChart policy={draft} targetAge={targetAge} />
+        <UnitLinkLifetimeChart policy={draft} targetAge={0} />
       </div>
     </div>
   );
