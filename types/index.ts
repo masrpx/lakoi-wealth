@@ -97,6 +97,8 @@ export interface Scenario {
 export interface PersonalInfo {
   currentAge: number;
   name: string;
+  monthlyIncome: number;
+  monthlyExpense: number;
 }
 
 export interface AppState {
@@ -107,6 +109,7 @@ export interface AppState {
   investments: InvestmentItem[];
   goals: Goal[];
   cashflow: CashflowEntry[];
+  customExpenses: CustomExpenseItem[];
 }
 
 // ─── UI State ────────────────────────────────────────────────────────────────

@@ -72,6 +72,8 @@ export const demoData: AppState = {
   personal: {
     currentAge: 35,
     name: "คุณสมชาย ใจดี",
+    monthlyIncome: 150000,
+    monthlyExpense: 80000,
   },
   insurance: [DEMO_ENDOWMENT, DEMO_HEALTH, DEMO_UL],
   assets: [
@@ -140,4 +142,5 @@ export const demoData: AppState = {
       endAge: 90,
     },
   ],
+  customExpenses: [],
 };

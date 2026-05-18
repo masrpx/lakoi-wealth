@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import {
   InvestmentSection, DebtSection, CustomExpenseSection,
 } from "@/components/cashflow/CashflowSections";
 import { NetSavingsBar } from "@/components/cashflow/NetSavingsBar";
+import { ExportMenu } from "@/components/export/ExportMenu";
 import type { CustomExpenseItem } from "@/types";
 
 type CashflowView = "monthly" | "yearly";
@@ -21,6 +22,7 @@ type CashflowView = "monthly" | "yearly";
 export default function CashflowPage() {
   const router = useRouter();
   const [view, setView] = useState<CashflowView>("monthly");
+  const chartRef = useRef<HTMLDivElement>(null);
 
   const {
     assets, liabilities, monthlyIncome, monthlyExpense, currentAge,
@@ -76,6 +78,15 @@ export default function CashflowPage() {
           <h1 className="text-base font-semibold leading-tight">กระแสเงินสด</h1>
           <p className="text-xs text-muted-foreground">รายรับ · รายจ่าย · เงินออม</p>
         </div>
+        <ExportMenu
+          captureRef={chartRef}
+          title="กระแสเงินสด"
+          metrics={[
+            { label: "รายรับ/เดือน", value: `฿${(monthlyIncome || 150000).toLocaleString("th-TH")}`, variant: "teal" },
+            { label: "รายจ่ายรวม/เดือน", value: `฿${totalExpenses.toLocaleString("th-TH")}`, variant: "rose" },
+            { label: "เงินออมสุทธิ/เดือน", value: `฿${((currentPoint?.net ?? 0)).toLocaleString("th-TH")}`, variant: (currentPoint?.net ?? 0) >= 0 ? "teal" : "rose" },
+          ]}
+        />
         {/* Toggle */}
         <div className="flex rounded-xl overflow-hidden shrink-0" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}>
           {(["monthly", "yearly"] as const).map((v) => (
@@ -96,7 +107,9 @@ export default function CashflowPage() {
       </header>
 
       <div className="flex-1 overflow-y-auto">
+        <div ref={chartRef}>
         <CashflowChart monthlyPoint={monthlyPoint} yearlyData={yearlyData} view={view} />
+        </div>
 
         <div className="px-4 space-y-3 pt-2 pb-4">
           <IncomeSection

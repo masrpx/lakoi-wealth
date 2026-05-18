@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect, Suspense } from "react";
+import { useState, useMemo, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Plus, Pencil, Trash2, Check } from "lucide-react";
+import { ExportMenu } from "@/components/export/ExportMenu";
 import { Button } from "@/components/ui/button";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { useBalanceSheetStore } from "@/lib/store/balanceSheet";
@@ -391,6 +392,7 @@ function BalanceSheetContent() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const chartRef = useRef<HTMLDivElement>(null);
   const totalAssets = useMemo(() => assets.reduce((s, a) => s + a.value, 0), [assets]);
   const totalLiab = useMemo(() => liabilities.reduce((s, l) => s + l.totalAmount, 0), [liabilities]);
   const netWorth = totalAssets - totalLiab;
@@ -407,13 +409,23 @@ function BalanceSheetContent() {
         <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0" onClick={() => router.push("/")}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-base font-semibold leading-tight">งบดุล</h1>
           <p className="text-xs text-muted-foreground">สินทรัพย์ · หนี้สิน · ความมั่งคั่งสุทธิ</p>
         </div>
+        <ExportMenu
+          captureRef={chartRef}
+          title="งบดุล"
+          metrics={[
+            { label: "สินทรัพย์รวม", value: `฿${(totalAssets / 1_000_000).toFixed(2)}M`, variant: "teal" },
+            { label: "หนี้สินรวม", value: `฿${(totalLiab / 1_000_000).toFixed(2)}M`, variant: "rose" },
+            { label: "ความมั่งคั่งสุทธิ", value: `฿${(netWorth / 1_000_000).toFixed(2)}M`, variant: netWorth >= 0 ? "gold" : "rose" },
+          ]}
+        />
       </header>
 
       <div className="flex-1 overflow-y-auto">
+        <div ref={chartRef}>
         {/* KPI */}
         <div className="grid grid-cols-3 gap-2 px-5 py-4" style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-surface)" }}>
           <div className="text-center">
@@ -447,6 +459,7 @@ function BalanceSheetContent() {
             <span className="text-xs font-semibold" style={{ color: "#fb7185" }}>{(100 - assetPct).toFixed(0)}%</span>
           </div>
         </div>
+        </div>{/* end chartRef */}
 
         {/* Assets */}
         <div className="px-5 pt-4 pb-2">

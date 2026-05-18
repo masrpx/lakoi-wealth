@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import {
 import { AllocationChart } from "@/components/portfolio/AllocationChart";
 import { GrowthTable } from "@/components/portfolio/GrowthTable";
 import { InvestmentList } from "@/components/portfolio/InvestmentList";
+import { ExportMenu } from "@/components/export/ExportMenu";
 
 function fmtBaht(n: number): string {
   if (n >= 1_000_000) return `฿${(n / 1_000_000).toFixed(2)}M`;
@@ -36,6 +37,7 @@ export default function PortfolioPage() {
   const totalDCA = useMemo(() => portfolioTotalDCA(investments), [investments]);
   const allocations = useMemo(() => portfolioAllocation(investments), [investments]);
   const age = currentAge || 35;
+  const chartRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-24">
@@ -47,10 +49,19 @@ export default function PortfolioPage() {
         <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0" onClick={() => router.push("/")}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-base font-semibold leading-tight">พอร์ตการลงทุน</h1>
           <p className="text-xs text-muted-foreground">จัดการกองทุนและสินทรัพย์ลงทุน</p>
         </div>
+        <ExportMenu
+          captureRef={chartRef}
+          title="พอร์ตการลงทุน"
+          metrics={[
+            { label: "มูลค่ารวม", value: fmtBaht(totalValue), variant: "gold" },
+            { label: "ผลตอบแทน (ถ่วงน้ำหนัก)", value: `${weightedReturn.toFixed(1)}%`, variant: "teal" },
+            { label: "DCA/เดือน", value: fmtBaht(totalDCA), variant: "default" },
+          ]}
+        />
       </header>
 
       <div className="flex-1 overflow-y-auto">
@@ -74,9 +85,11 @@ export default function PortfolioPage() {
         </div>
 
         {/* Allocation pie */}
+        <div ref={chartRef}>
         {allocations.length > 0 && (
           <AllocationChart allocations={allocations} totalValue={totalValue} />
         )}
+        </div>
 
         {/* Growth projection table */}
         <div className="mt-3">
