@@ -33,7 +33,9 @@
       "Bash(pkill -f \"next dev\")",
       "Bash(curl -fL https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Regular.ttf -o /home/maxlakoi/lakoi-wealth/public/fonts/Sarabun-Regular.ttf)",
       "Bash(curl -fL https://github.com/google/fonts/raw/main/ofl/sarabun/Sarabun-Bold.ttf -o /home/maxlakoi/lakoi-wealth/public/fonts/Sarabun-Bold.ttf)",
-      "Bash(git tag *)"
+      "Bash(git tag *)",
+      "Bash(find /home/maxlakoi/lakoi-wealth -type f '\\(' -name *.ts -o -name *.tsx '\\)' ! -path */node_modules/* ! -path */.next/*)",
+      "Bash(git -C /home/maxlakoi/lakoi-wealth log --oneline)"
     ]
   }
 }
