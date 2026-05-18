@@ -25,6 +25,8 @@ import {
   Receipt,
   AlertTriangle,
   CreditCard,
+  Layers,
+  LineChart,
 } from "lucide-react";
 
 const navItems = [
@@ -37,6 +39,8 @@ const navItems = [
   { href: "/portfolio", label: "Portfolio", icon: TrendingUp },
   { href: "/goals", label: "Goals", icon: Target },
   { href: "/use-cases/portfolio-projection", label: "ภาพรวม", icon: Activity },
+  { href: "/use-cases/bridge", label: "Bridge Strategy", icon: Layers },
+  { href: "/use-cases/ul-lifetime", label: "UL Lifetime", icon: LineChart },
   { href: "/scenarios", label: "Scenarios", icon: GitCompare },
 ];
 
