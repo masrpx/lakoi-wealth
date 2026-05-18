@@ -236,3 +236,38 @@ input[type="range"]::-moz-range-thumb {
     padding-top: env(safe-area-inset-top);
   }
 }
+
+/* ─── Presentation mode ─── */
+/* Scale all rem-based font sizes up 15% */
+[data-mode="presentation"] {
+  font-size: 115%;
+}
+
+/* Hide input/edit panels in presentation mode */
+[data-mode="presentation"] [data-input-panel] {
+  display: none;
+}
+
+/* Charts get breathing room when input panels are hidden */
+[data-mode="presentation"] [data-chart-expand] {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* Recharts chart animations — ensure entrance always plays */
+.recharts-layer path,
+.recharts-bar-rectangle {
+  transition: opacity 150ms ease-out;
+}
+
+/* Skeleton shimmer animation */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-elevated) 25%, var(--bg-surface) 50%, var(--bg-elevated) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}

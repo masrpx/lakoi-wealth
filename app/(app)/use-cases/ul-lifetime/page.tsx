@@ -2,8 +2,29 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useUIStore } from "@/lib/store/ui";
+import { StoryPlayer, type StoryStep } from "@/components/layout/StoryPlayer";
+
+const UL_STORY: StoryStep[] = [
+  {
+    headline: "คุณเริ่มต้นสร้างความมั่งคั่งวันนี้",
+    body: "ออมเงินผ่าน Unit Link เดือนละ ฿8,333 (ปีละ ฿100,000) ตั้งแต่อายุ 35 ปี พร้อมเพิ่ม Top-up อีกปีละ ฿50,000",
+  },
+  {
+    headline: "ผลตอบแทนทบต้นทำงานให้คุณทุกวัน",
+    body: "อัตราผลตอบแทนคาดการณ์ 7% ต่อปี ทำให้มูลค่ากรมธรรม์เติบโตแบบก้าวกระโดด ทุก 10 ปีมูลค่าเพิ่มขึ้นกว่าสองเท่า",
+  },
+  {
+    headline: "ถึงเวลาเก็บเกี่ยวที่อายุ 60",
+    body: "คุณถอนเงิน ฿30,000 ต่อเดือน เป็นรายได้หลังเกษียณ ขณะที่เงินส่วนที่เหลือยังเติบโตต่อเนื่อง",
+  },
+  {
+    headline: "มรดกความมั่งคั่งให้ทายาท",
+    body: "ทุนประกันชีวิต ฿5,000,000 คุ้มครองตลอดชีพ ส่งต่อความมั่งคั่งให้คนที่คุณรักแม้เกิดเหตุไม่คาดฝัน",
+  },
+];
 import { UnitLinkLifetimeChart } from "@/components/insurance/UnitLinkLifetimeChart";
 import { ULComparisonChart, getLineMetrics, fmtBahtShort, type ComparisonLine } from "@/components/charts/ULComparisonChart";
 import { calculateUnitLinkProjection, calculateULPeakValue } from "@/lib/calculations/unit-link";
@@ -93,6 +114,8 @@ export default function ULLifetimePage() {
   const [withdrawalStartAge, setWithdrawalStartAge] = useState(DEMO_UL.withdrawals?.startAge ?? 60);
   const [withdrawalMonthly, setWithdrawalMonthly] = useState(DEMO_UL.withdrawals?.monthlyAmount ?? 30000);
   const [activeScenario, setActiveScenario] = useState<number | null>(null);
+  const [storyOpen, setStoryOpen] = useState(false);
+  const { mode } = useUIStore();
 
   // Live policy built from sliders — < 1ms, no debounce needed
   const liveDraft = useMemo((): UnitLinkPolicy => ({
@@ -159,15 +182,30 @@ export default function ULLifetimePage() {
           onClick={() => router.push("/")}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-base font-semibold leading-tight">Unit Link Lifetime</h1>
           <p className="text-xs text-muted-foreground">เงินคุณ ทำงานยังไงตลอดชีวิต</p>
         </div>
+        {mode === "presentation" && (
+          <Button
+            size="sm"
+            className="h-9 px-3 gap-1.5 text-xs font-semibold shrink-0"
+            style={{ background: "var(--gold-500)", color: "#0a0e1a" }}
+            onClick={() => setStoryOpen(true)}
+          >
+            <Play className="h-3.5 w-3.5" />
+            เล่าเรื่อง
+          </Button>
+        )}
       </header>
+      {storyOpen && (
+        <StoryPlayer steps={UL_STORY} onClose={() => setStoryOpen(false)} />
+      )}
 
       <div className="flex-1 overflow-y-auto">
-        {/* ── Sensitivity sliders — 3 columns ── */}
+        {/* ── Sensitivity sliders — 3 columns (hidden in presentation mode) ── */}
         <div
+          data-input-panel
           className="grid grid-cols-3 gap-4 px-5 py-4"
           style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-surface)" }}
         >

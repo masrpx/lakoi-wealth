@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef, Suspense } from "react";
+import { useCountUp } from "@/hooks/useCountUp";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Plus, Pencil, Trash2, Check } from "lucide-react";
 import { ExportMenu } from "@/components/export/ExportMenu";
@@ -396,6 +397,9 @@ function BalanceSheetContent() {
   const totalAssets = useMemo(() => assets.reduce((s, a) => s + a.value, 0), [assets]);
   const totalLiab = useMemo(() => liabilities.reduce((s, l) => s + l.totalAmount, 0), [liabilities]);
   const netWorth = totalAssets - totalLiab;
+  const animAssets = useCountUp(totalAssets);
+  const animLiab = useCountUp(totalLiab);
+  const animNetWorth = useCountUp(netWorth);
   const totalMonthlyDebt = useMemo(() => liabilities.reduce((s, l) => s + l.monthlyPayment, 0), [liabilities]);
   const assetPct = totalAssets + totalLiab > 0 ? (totalAssets / (totalAssets + totalLiab)) * 100 : 50;
 
@@ -430,17 +434,17 @@ function BalanceSheetContent() {
         <div className="grid grid-cols-3 gap-2 px-5 py-4" style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-surface)" }}>
           <div className="text-center">
             <p className="text-xs text-muted-foreground mb-0.5">สินทรัพย์รวม</p>
-            <p className="text-base font-bold" style={{ color: "#2dd4bf" }}>{fmtBaht(totalAssets)}</p>
+            <p className="text-base font-bold" style={{ color: "#2dd4bf" }}>{fmtBaht(animAssets)}</p>
           </div>
           <div className="text-center">
             <p className="text-xs text-muted-foreground mb-0.5">ความมั่งคั่งสุทธิ</p>
-            <p className="text-lg font-bold font-display" style={{ color: netWorth >= 0 ? "var(--gold-500)" : "#fb7185" }}>
-              {fmtBaht(netWorth)}
+            <p className="text-lg font-bold font-display" style={{ color: animNetWorth >= 0 ? "var(--gold-500)" : "#fb7185" }}>
+              {fmtBaht(animNetWorth)}
             </p>
           </div>
           <div className="text-center">
             <p className="text-xs text-muted-foreground mb-0.5">หนี้สินรวม</p>
-            <p className="text-base font-bold" style={{ color: "#fb7185" }}>{fmtBaht(totalLiab)}</p>
+            <p className="text-base font-bold" style={{ color: "#fb7185" }}>{fmtBaht(animLiab)}</p>
           </div>
         </div>
 

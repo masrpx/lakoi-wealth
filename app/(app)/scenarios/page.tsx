@@ -9,10 +9,15 @@ import { useBalanceSheetStore } from "@/lib/store/balanceSheet";
 import { useInsuranceStore } from "@/lib/store/insurance";
 import { useGoalsStore } from "@/lib/store/goals";
 import { computeScenarioMetrics } from "@/lib/calculations/scenarios";
+import dynamic from "next/dynamic";
 import { SaveScenarioDialog } from "@/components/scenarios/SaveScenarioDialog";
 import { ScenarioCard } from "@/components/scenarios/ScenarioCard";
-import { CompareView } from "@/components/scenarios/CompareView";
 import type { AppState } from "@/types";
+
+const CompareView = dynamic(
+  () => import("@/components/scenarios/CompareView").then((m) => m.CompareView),
+  { ssr: false }
+);
 
 export default function ScenariosPage() {
   const router = useRouter();

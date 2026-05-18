@@ -111,7 +111,7 @@ export default function CashflowPage() {
         <CashflowChart monthlyPoint={monthlyPoint} yearlyData={yearlyData} view={view} />
         </div>
 
-        <div className="px-4 space-y-3 pt-2 pb-4">
+        <div data-input-panel className="px-4 space-y-3 pt-2 pb-4">
           <IncomeSection
             monthlyIncome={monthlyIncome || 150000}
             view={view}

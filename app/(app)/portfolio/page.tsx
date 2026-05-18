@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
+import { useCountUp } from "@/hooks/useCountUp";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,9 @@ export default function PortfolioPage() {
   const allocations = useMemo(() => portfolioAllocation(investments), [investments]);
   const age = currentAge || 35;
   const chartRef = useRef<HTMLDivElement>(null);
+  const animValue = useCountUp(totalValue);
+  const animReturn = useCountUp(weightedReturn);
+  const animDCA = useCountUp(totalDCA);
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-24">
@@ -72,15 +76,15 @@ export default function PortfolioPage() {
         >
           <div className="text-center">
             <p className="text-xs text-muted-foreground mb-0.5">มูลค่ารวม</p>
-            <p className="text-base font-bold" style={{ color: "var(--gold-500)" }}>{fmtBaht(totalValue)}</p>
+            <p className="text-base font-bold" style={{ color: "var(--gold-500)" }}>{fmtBaht(animValue)}</p>
           </div>
           <div className="text-center">
             <p className="text-xs text-muted-foreground mb-0.5">ผลตอบแทน (ถ่วงน้ำหนัก)</p>
-            <p className="text-lg font-bold font-display" style={{ color: "#2dd4bf" }}>{weightedReturn.toFixed(1)}%</p>
+            <p className="text-lg font-bold font-display" style={{ color: "#2dd4bf" }}>{animReturn.toFixed(1)}%</p>
           </div>
           <div className="text-center">
             <p className="text-xs text-muted-foreground mb-0.5">DCA/เดือน</p>
-            <p className="text-base font-bold" style={{ color: "#60a5fa" }}>{fmtBaht(totalDCA)}</p>
+            <p className="text-base font-bold" style={{ color: "#60a5fa" }}>{fmtBaht(animDCA)}</p>
           </div>
         </div>
 
