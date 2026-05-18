@@ -5,23 +5,15 @@ import {
   View,
   Image,
   StyleSheet,
-  Font,
 } from "@react-pdf/renderer";
 
-// Register fonts if available (gracefully skip in server environments)
-try {
-  Font.register({
-    family: "Sarabun",
-    src: "https://fonts.gstatic.com/s/sarabun/v13/DtVmJx26TKEr37c9WBJDnlQN9gk1.woff2",
-  });
-} catch {
-  // Ignore font registration failures
-}
+// Font is registered by ExportMenu just before pdf() is called — not here.
 
 const styles = StyleSheet.create({
   page: {
     backgroundColor: "#ffffff",
-    fontFamily: "Helvetica",
+    fontFamily: "Sarabun",
+    fontWeight: "normal",
     padding: 36,
   },
   header: {
@@ -38,23 +30,27 @@ const styles = StyleSheet.create({
   },
   brandName: {
     fontSize: 18,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Sarabun",
+    fontWeight: "bold",
     color: "#c9a84c",
     letterSpacing: 0.5,
   },
   brandTagline: {
     fontSize: 8,
+    fontFamily: "Sarabun",
     color: "#64748b",
     marginTop: 2,
   },
   pageTitle: {
     fontSize: 11,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Sarabun",
+    fontWeight: "bold",
     color: "#0f172a",
     textAlign: "right",
   },
   pageDate: {
-    fontSize: 8,
+    fontSize: 9,
+    fontFamily: "Sarabun",
     color: "#64748b",
     marginTop: 3,
     textAlign: "right",
@@ -64,10 +60,10 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 9,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Sarabun",
+    fontWeight: "bold",
     color: "#475569",
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
+    letterSpacing: 0.4,
     marginBottom: 8,
   },
   metricsRow: {
@@ -79,40 +75,45 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f8fafc",
     borderRadius: 6,
-    padding: 10,
+    padding: 12,
     borderWidth: 1,
     borderColor: "#e2e8f0",
   },
   metricLabel: {
-    fontSize: 8,
+    fontSize: 9,
+    fontFamily: "Sarabun",
     color: "#64748b",
-    marginBottom: 4,
+    marginBottom: 5,
   },
   metricValue: {
-    fontSize: 14,
-    fontFamily: "Helvetica-Bold",
+    fontSize: 16,
+    fontFamily: "Sarabun",
+    fontWeight: "bold",
     color: "#0f172a",
   },
   metricValueGold: {
-    fontSize: 14,
-    fontFamily: "Helvetica-Bold",
+    fontSize: 16,
+    fontFamily: "Sarabun",
+    fontWeight: "bold",
     color: "#c9a84c",
   },
   metricValueTeal: {
-    fontSize: 14,
-    fontFamily: "Helvetica-Bold",
+    fontSize: 16,
+    fontFamily: "Sarabun",
+    fontWeight: "bold",
     color: "#0d9488",
   },
   metricValueRose: {
-    fontSize: 14,
-    fontFamily: "Helvetica-Bold",
+    fontSize: 16,
+    fontFamily: "Sarabun",
+    fontWeight: "bold",
     color: "#e11d48",
   },
   chartImage: {
     borderRadius: 8,
     width: "100%",
     objectFit: "contain",
-    maxHeight: 320,
+    maxHeight: 340,
   },
   footer: {
     position: "absolute",
@@ -124,17 +125,19 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
   },
   footerText: {
-    fontSize: 7,
+    fontSize: 8,
+    fontFamily: "Sarabun",
     color: "#94a3b8",
   },
   disclaimer: {
-    fontSize: 6.5,
+    fontSize: 7.5,
+    fontFamily: "Sarabun",
     color: "#94a3b8",
     textAlign: "right",
-    maxWidth: 280,
+    maxWidth: 300,
   },
 });
 
@@ -174,7 +177,7 @@ export function LakоiWealthPdf({ title, chartImageDataUrl, metrics, generatedDa
         <View style={styles.header}>
           <View style={styles.brandBlock}>
             <Text style={styles.brandName}>LAKOI WEALTH</Text>
-            <Text style={styles.brandTagline}>Insurance & Investment Planning</Text>
+            <Text style={styles.brandTagline}>Insurance &amp; Investment Planning</Text>
           </View>
           <View>
             <Text style={styles.pageTitle}>{title}</Text>
@@ -209,7 +212,8 @@ export function LakоiWealthPdf({ title, chartImageDataUrl, metrics, generatedDa
         <View style={styles.footer} fixed>
           <Text style={styles.footerText}>Lakoi Wealth — {date}</Text>
           <Text style={styles.disclaimer}>
-            ข้อมูลนี้จัดทำเพื่อการวางแผนทางการเงินเท่านั้น ไม่ถือเป็นคำแนะนำการลงทุน ผลตอบแทนในอดีตไม่ได้รับประกันผลในอนาคต
+            ข้อมูลนี้จัดทำเพื่อการวางแผนทางการเงินเท่านั้น ไม่ถือเป็นคำแนะนำการลงทุน
+            ผลตอบแทนในอดีตไม่ได้รับประกันผลในอนาคต
           </Text>
         </View>
       </Page>

@@ -51,9 +51,19 @@ export function ExportMenu({ captureRef, title, metrics }: Props) {
       const chartImageDataUrl = await captureImage();
       setExportState("generating");
 
-      const { pdf } = await import("@react-pdf/renderer");
+      const { pdf, Font } = await import("@react-pdf/renderer");
       const { LakоiWealthPdf } = await import("./PdfDocument");
       const { createElement } = await import("react");
+
+      // Register Thai font right before generation — needs to be accessible at this URL
+      const origin = window.location.origin;
+      Font.register({
+        family: "Sarabun",
+        fonts: [
+          { src: `${origin}/fonts/Sarabun-Regular.ttf`, fontWeight: "normal" },
+          { src: `${origin}/fonts/Sarabun-Bold.ttf`,    fontWeight: "bold" },
+        ],
+      });
 
       const doc = createElement(LakоiWealthPdf, {
         title,
@@ -78,10 +88,13 @@ export function ExportMenu({ captureRef, title, metrics }: Props) {
   return (
     <div className="relative" ref={menuRef}>
       <Button
-        size="sm"
         variant="outline"
-        className="h-9 px-3 gap-1.5 text-xs"
-        style={{ border: "1px solid var(--border)" }}
+        className="h-10 px-4 gap-2 text-sm font-medium"
+        style={{
+          border: "1.5px solid rgba(201,168,76,0.45)",
+          color: "var(--gold-500)",
+          background: "rgba(201,168,76,0.07)",
+        }}
         onClick={() => setOpen((o) => !o)}
         disabled={busy}
       >
@@ -101,7 +114,7 @@ export function ExportMenu({ captureRef, title, metrics }: Props) {
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div
-            className="absolute right-0 top-10 z-50 rounded-xl overflow-hidden min-w-[160px]"
+            className="absolute right-0 top-12 z-50 rounded-xl overflow-hidden min-w-[170px]"
             style={{
               background: "var(--bg-elevated)",
               border: "1px solid var(--border)",
@@ -109,15 +122,15 @@ export function ExportMenu({ captureRef, title, metrics }: Props) {
             }}
           >
             <button
-              className="flex w-full items-center gap-2.5 px-4 py-3 text-sm hover:bg-white/5 transition-colors"
+              className="flex w-full items-center gap-3 px-4 py-3.5 text-sm hover:bg-white/5 transition-colors"
               onClick={handleExportImage}
             >
               <FileImage className="h-4 w-4 text-muted-foreground" />
-              Save as Image
+              บันทึกเป็นรูป
             </button>
             <div style={{ height: 1, background: "var(--border)" }} />
             <button
-              className="flex w-full items-center gap-2.5 px-4 py-3 text-sm hover:bg-white/5 transition-colors"
+              className="flex w-full items-center gap-3 px-4 py-3.5 text-sm hover:bg-white/5 transition-colors"
               onClick={handleExportPdf}
             >
               <FileText className="h-4 w-4 text-muted-foreground" />
