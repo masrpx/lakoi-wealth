@@ -6,6 +6,7 @@ import { useUIStore } from "@/lib/store/ui";
 import { PresentationToggle } from "@/components/layout/PresentationToggle";
 import { DisclaimerModal } from "@/components/layout/DisclaimerModal";
 import { FooterDisclaimer } from "@/components/layout/FooterDisclaimer";
+import { FeedbackButton } from "@/components/feedback/FeedbackButton";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -26,6 +27,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </motion.div>
 
       <PresentationToggle />
+      <FeedbackButton />
       <FooterDisclaimer />
     </div>
   );
