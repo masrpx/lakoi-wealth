@@ -11,7 +11,26 @@
       "Bash(git commit *)",
       "Bash(npm run *)",
       "Bash(npx next *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001/insurance/unit-link)",
+      "Bash(kill 8610)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001/use-cases/bridge)",
+      "Bash(kill 10265)",
+      "Bash(lsof -ti:3001)",
+      "Bash(xargs kill -9)",
+      "Bash(curl -s -o /dev/null -w \"HTTP: %{http_code}\" http://localhost:3002/use-cases/bridge)",
+      "Bash(lsof -ti:3002)",
+      "Bash(lsof -ti:3003)",
+      "Bash(lsof -ti:3004)",
+      "Bash(xargs ls)",
+      "Bash(awk '{print $NF}')",
+      "Bash(npm install *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3002/scenarios)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3002/cashflow)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3002/balance-sheet)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3002/portfolio)",
+      "Bash(pkill -f \"next dev\")"
     ]
   }
 }
