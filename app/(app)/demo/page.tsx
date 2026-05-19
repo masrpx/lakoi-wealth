@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle, RotateCcw, User, BarChart3, Shield, TrendingUp, Wallet, Target, GitCompare, Activity, Layers, LineChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useBalanceSheetStore } from "@/lib/store/balanceSheet";
 import { useInsuranceStore } from "@/lib/store/insurance";
 import { useGoalsStore } from "@/lib/store/goals";
+import { useUIStore } from "@/lib/store/ui";
 import { DEMO_PROFILES, type DemoProfile } from "@/lib/data/demo-profiles";
 import { demoData } from "@/lib/data/demo-data";
 
@@ -45,11 +45,11 @@ function loadProfile(profile: DemoProfile) {
 
 export default function DemoPage() {
   const router = useRouter();
-  const [loadedId, setLoadedId] = useState<string | null>(null);
+  const { loadedProfileId, setLoadedProfileId } = useUIStore();
 
   function handleLoad(profile: DemoProfile) {
     loadProfile(profile);
-    setLoadedId(profile.id);
+    setLoadedProfileId(profile.id);
   }
 
   function handleReset() {
@@ -68,7 +68,7 @@ export default function DemoPage() {
     });
     loadPolicies(demoData.insurance);
     loadGoals(demoData.goals);
-    setLoadedId("default");
+    setLoadedProfileId("default");
   }
 
   return (
@@ -102,7 +102,7 @@ export default function DemoPage() {
         <div className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">เลือกโปรไฟล์</p>
           {DEMO_PROFILES.map((profile) => {
-            const isLoaded = loadedId === profile.id;
+            const isLoaded = loadedProfileId === profile.id;
             return (
               <div
                 key={profile.id}
@@ -159,7 +159,7 @@ export default function DemoPage() {
             className="rounded-2xl p-4 flex items-center gap-4"
             style={{
               background: "var(--bg-surface)",
-              border: loadedId === "default" ? "1.5px solid var(--border)" : "1px solid var(--border)",
+              border: loadedProfileId === "default" ? "1.5px solid var(--border)" : "1px solid var(--border)",
               opacity: 0.7,
             }}
           >
@@ -185,7 +185,7 @@ export default function DemoPage() {
         </div>
 
         {/* Module navigation */}
-        {loadedId && (
+        {loadedProfileId && (
           <div className="space-y-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">ไปที่โมดูล</p>
             <div className="grid grid-cols-3 gap-2">
@@ -205,7 +205,7 @@ export default function DemoPage() {
           </div>
         )}
 
-        {!loadedId && (
+        {!loadedProfileId && (
           <div
             className="rounded-xl px-4 py-3 text-xs text-center"
             style={{ background: "var(--bg-elevated)", color: "var(--text-muted)" }}

@@ -158,7 +158,7 @@ export default function BridgePage() {
         style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-surface)" }}
       >
         <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0"
-          onClick={() => router.push("/")}>
+          onClick={() => router.push("/demo")}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1 min-w-0">

@@ -133,7 +133,7 @@ export default function PortfolioProjectionPage() {
         className="flex items-center gap-3 px-5 py-3 sticky top-0 z-20"
         style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-surface)" }}
       >
-        <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0" onClick={() => router.push("/")}>
+        <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0" onClick={() => router.push("/demo")}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
