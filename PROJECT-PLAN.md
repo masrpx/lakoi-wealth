@@ -1,7 +1,32 @@
 # Lakoi Wealth — Project Plan
 
-**Phase:** 0 (Build & Validate)
+**Phase:** 0 (Build & Validate)  
 **Stack:** Next.js 15 · TypeScript · Tailwind CSS 4 · shadcn/ui · Recharts · Zustand · Vercel
+
+---
+
+## Admin Portfolio Dashboard ✅
+*Personal growth portfolio monitor for Max — separate from the client-facing app.*
+
+- [x] PIN-gated `/admin/*` route group (`ADMIN_PIN` env var, localStorage persistence)
+- [x] Yahoo Finance proxy `/api/price/[ticker]` (server-side, avoids CORS, 5-min cache)
+- [x] USDTHB live rate auto-fetched on every page load (`USDTHB=X`)
+- [x] All currency in Thai Baht (฿) — input, display, rebalancer
+- [x] Portfolio table: price ฿, 24h%, value ฿, actual/target weights, drift, signal badge
+- [x] Summary cards: total ฿, biggest drift, bucket breakdown
+- [x] Rebalancing calculator: new cash (฿) → per-asset buy amounts (฿), skips AVOID assets
+- [x] Technical signal engine — weighted scoring:
+  - RSI(14), EMA 20/50 cross, vs EMA200, 52w high distance
+  - Crypto (`*-USD`) uses wider thresholds (30/15/10% vs 20/10/5%)
+  - Income ETFs (SGOV, BIL, SHV…) → hardcoded HOLD — Income Asset
+  - Score ≥ 3 = BUY · 0–2 = HOLD · < 0 = AVOID
+- [x] Signal panel: tap to expand per-indicator point breakdown
+- [x] DCA log: collapsible per asset, entries in ฿, auto-computes units
+- [x] Settings: card-per-asset layout, Value ฿ input, export/import JSON
+- [x] Default 9-asset portfolio pre-loaded (BTC, SPY, GOOG, NVDA, GLD, SGOV, TSLA, LLY, SOFI)
+- [x] All state persisted in localStorage (`lakoi-growth-portfolio`)
+
+**To deploy on Vercel:** set `ADMIN_PIN` environment variable.
 
 ---
 
