@@ -1,0 +1,206 @@
+"use client";
+
+import { useState } from "react";
+import type { PortfolioAsset, PriceData, DCAEntry, AssetSignal } from "@/types/growthPortfolio";
+import { assetValueUsd, assetTotalUnits } from "@/lib/store/growthPortfolio";
+
+const BUCKET_DOT: Record<string, string> = {
+  Core: "#60a5fa",
+  Growth: "#2dd4bf",
+  Hedge: "#a78bfa",
+  Speculative: "#fb7185",
+};
+const SIG_STYLE: Record<string, { bg: string; fg: string }> = {
+  BUY:   { bg: "rgba(45,212,191,0.12)", fg: "#2dd4bf" },
+  HOLD:  { bg: "rgba(201,168,76,0.12)", fg: "#c9a84c" },
+  AVOID: { bg: "rgba(251,113,133,0.12)", fg: "#fb7185" },
+};
+
+function fmtThb(v: number): string {
+  if (v === 0) return "–";
+  if (v >= 1_000_000) return `฿${(v / 1_000_000).toFixed(2)}M`;
+  return `฿${v.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+}
+function fmtUnits(n: number): string {
+  if (n <= 0) return "–";
+  if (n < 0.001) return n.toFixed(8);
+  if (n < 1) return n.toFixed(6);
+  if (n < 1000) return n.toFixed(4);
+  return n.toLocaleString("en-US", { maximumFractionDigits: 2 });
+}
+
+interface Props {
+  asset: PortfolioAsset;
+  dcaEntries: DCAEntry[];
+  priceCache: Record<string, PriceData>;
+  totalValueUsd: number;
+  signal: AssetSignal | undefined;
+  usdthbRate: number;
+  even: boolean;
+  onUpdateAsset: (id: string, patch: Partial<PortfolioAsset>) => void;
+}
+
+const GRID = "grid-cols-[1fr_82px_50px_110px_92px_46px_70px_50px_56px]";
+const CH = "text-[10px] uppercase tracking-widest text-muted-foreground";
+
+export function PortfolioRow({ asset, dcaEntries, priceCache, totalValueUsd, signal, usdthbRate, even, onUpdateAsset }: Props) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editMode, setEditMode] = useState<"units" | "thb">("units");
+  const [editValue, setEditValue] = useState("");
+
+  const pd = priceCache[asset.ticker];
+  const price = pd?.price;
+  const valueUsd = assetValueUsd(asset, dcaEntries, price, usdthbRate);
+  const valueThb = valueUsd * usdthbRate;
+  const units = (asset.unitsHeld ?? 0) > 0 ? (asset.unitsHeld ?? 0) : assetTotalUnits(asset.id, dcaEntries);
+  const actualPct = totalValueUsd > 0 ? (valueUsd / totalValueUsd) * 100 : 0;
+  const drift = actualPct - asset.targetWeight;
+  const change24 = pd ? ((pd.price - pd.prevClose) / pd.prevClose) * 100 : null;
+  const sig = signal ? SIG_STYLE[signal.composite] : null;
+
+  function openEdit() {
+    setEditValue(units > 0 ? String(units) : "");
+    setEditMode("units");
+    setIsEditing(true);
+  }
+
+  function commit() {
+    const parsed = parseFloat(editValue);
+    if (!isNaN(parsed) && parsed >= 0) {
+      if (editMode === "units") {
+        onUpdateAsset(asset.id, { unitsHeld: parsed });
+      } else if (price !== undefined && usdthbRate > 0) {
+        onUpdateAsset(asset.id, { unitsHeld: parsed / usdthbRate / price });
+      }
+    }
+    setIsEditing(false);
+  }
+
+  const rowBg = even ? "var(--background)" : "var(--card)";
+  const mh = { minHeight: "unset" } as const;
+  const driftColor = Math.abs(drift) < 1.5 ? "var(--muted-foreground)" : drift > 0 ? "#fb7185" : "#2dd4bf";
+
+  return (
+    <div style={{ background: rowBg, borderBottom: "1px solid var(--border)" }}>
+      {/* ── Desktop ── */}
+      <div className={`hidden md:grid items-center gap-x-2 px-4 py-2.5 ${GRID}`}>
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: BUCKET_DOT[asset.bucket] }} />
+          <div className="min-w-0">
+            <p className="text-sm font-medium truncate leading-tight">{asset.name}</p>
+            <p className={`${CH} font-mono normal-case`}>{asset.ticker}</p>
+          </div>
+        </div>
+
+        <p className="text-right text-xs font-mono tabular-nums">
+          {price !== undefined ? fmtThb(price * usdthbRate) : <span className="text-muted-foreground">…</span>}
+        </p>
+
+        <p className="text-right text-xs font-mono tabular-nums" style={{ color: change24 === null ? "var(--muted-foreground)" : change24 >= 0 ? "#2dd4bf" : "#fb7185" }}>
+          {change24 !== null ? `${change24 >= 0 ? "+" : ""}${change24.toFixed(1)}%` : "–"}
+        </p>
+
+        <div className="flex flex-col items-end justify-center gap-0.5">
+          {isEditing ? (
+            <>
+              <div className="flex gap-0.5">
+                {(["units", "thb"] as const).map((m) => (
+                  <button key={m} onClick={() => setEditMode(m)} style={{ ...mh, background: editMode === m ? "var(--gold-500)" : "var(--muted)", color: editMode === m ? "#fff" : "var(--muted-foreground)" }} className="text-[9px] font-mono px-1.5 py-0.5 rounded transition-colors">
+                    {m === "units" ? "# units" : "฿ value"}
+                  </button>
+                ))}
+              </div>
+              <input autoFocus type="number" value={editValue} onChange={(e) => setEditValue(e.target.value)}
+                onBlur={commit}
+                onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") setIsEditing(false); }}
+                className="w-24 text-right text-xs font-mono bg-transparent outline-none border-b-2 py-0.5"
+                style={{ ...mh, borderColor: "var(--gold-500)" }}
+              />
+            </>
+          ) : (
+            <button onClick={openEdit} style={mh} className="text-right hover:opacity-60 transition-opacity">
+              {units > 0 ? (
+                <span className="text-xs font-mono tabular-nums">{fmtUnits(units)}</span>
+              ) : (
+                <span className="text-xs" style={{ color: "var(--gold-500)" }}>+ set</span>
+              )}
+            </button>
+          )}
+        </div>
+
+        <p className="text-right text-sm font-mono font-semibold tabular-nums" style={{ color: "var(--gold-500)" }}>
+          {fmtThb(valueThb)}
+        </p>
+
+        <p className="text-right text-xs font-mono tabular-nums text-muted-foreground">{actualPct.toFixed(1)}%</p>
+
+        <div className="flex items-center justify-end gap-0.5">
+          <input type="number" min={0} max={100} step={0.5} value={asset.targetWeight}
+            onChange={(e) => onUpdateAsset(asset.id, { targetWeight: parseFloat(e.target.value) || 0 })}
+            className="w-10 text-right text-xs font-mono bg-transparent outline-none border-b"
+            style={{ ...mh, borderColor: "var(--border)" }}
+          />
+          <span className="text-xs text-muted-foreground">%</span>
+        </div>
+
+        <p className="text-right text-xs font-mono tabular-nums font-medium" style={{ color: driftColor }}>
+          {drift > 0 ? "+" : ""}{drift.toFixed(1)}%
+        </p>
+
+        {sig ? (
+          <div className="flex justify-end">
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ ...mh, background: sig.bg, color: sig.fg }}>
+              {signal?.composite}
+            </span>
+          </div>
+        ) : (
+          <p className="text-right text-[10px] text-muted-foreground">–</p>
+        )}
+      </div>
+
+      {/* ── Mobile ── */}
+      <div className="md:hidden px-4 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div className="w-2 h-2 rounded-full shrink-0" style={{ background: BUCKET_DOT[asset.bucket] }} />
+            <div className="min-w-0">
+              <p className="text-sm font-medium truncate">{asset.name}</p>
+              <p className="text-xs font-mono text-muted-foreground">{asset.ticker}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <button onClick={openEdit} style={mh}>
+              <span className="text-xs font-mono" style={{ color: units > 0 ? "var(--muted-foreground)" : "var(--gold-500)" }}>
+                {units > 0 ? fmtUnits(units) : "set"}
+              </span>
+            </button>
+            <p className="text-sm font-mono font-semibold tabular-nums" style={{ color: "var(--gold-500)" }}>{fmtThb(valueThb)}</p>
+            <div className="flex items-center gap-0.5">
+              <input type="number" min={0} max={100} step={0.5} value={asset.targetWeight}
+                onChange={(e) => onUpdateAsset(asset.id, { targetWeight: parseFloat(e.target.value) || 0 })}
+                className="w-9 text-right text-xs font-mono bg-transparent outline-none border-b"
+                style={{ ...mh, borderColor: "var(--border)" }}
+              />
+              <span className="text-xs text-muted-foreground">%</span>
+            </div>
+          </div>
+        </div>
+        {isEditing && (
+          <div className="flex items-center gap-2 mt-2">
+            {(["units", "thb"] as const).map((m) => (
+              <button key={m} onClick={() => setEditMode(m)} style={{ ...mh, background: editMode === m ? "var(--gold-500)" : "var(--muted)", color: editMode === m ? "#fff" : "var(--muted-foreground)" }} className="text-[10px] font-mono px-2 py-1 rounded transition-colors">
+                {m === "units" ? "# units" : "฿ value"}
+              </button>
+            ))}
+            <input autoFocus type="number" value={editValue} onChange={(e) => setEditValue(e.target.value)}
+              onBlur={commit}
+              onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") setIsEditing(false); }}
+              className="flex-1 text-right text-sm font-mono bg-transparent outline-none border-b-2"
+              style={{ ...mh, borderColor: "var(--gold-500)" }}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

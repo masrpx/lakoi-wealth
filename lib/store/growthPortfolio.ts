@@ -3,15 +3,15 @@ import { persist } from "zustand/middleware";
 import type { PortfolioAsset, DCAEntry, PriceData } from "@/types/growthPortfolio";
 
 const DEFAULT_ASSETS: PortfolioAsset[] = [
-  { id: "btc",  ticker: "BTC-USD", name: "Bitcoin",           targetWeight: 30, bucket: "Core",        manualValueTHB: 0 },
-  { id: "spy",  ticker: "SPY",     name: "S&P 500 ETF",       targetWeight: 20, bucket: "Core",        manualValueTHB: 0 },
-  { id: "goog", ticker: "GOOG",    name: "Alphabet",          targetWeight: 15, bucket: "Growth",      manualValueTHB: 0 },
-  { id: "nvda", ticker: "NVDA",    name: "NVIDIA",            targetWeight: 10, bucket: "Growth",      manualValueTHB: 0 },
-  { id: "gld",  ticker: "GLD",     name: "Gold ETF",          targetWeight: 5,  bucket: "Hedge",       manualValueTHB: 0 },
-  { id: "sgov", ticker: "SGOV",    name: "T-Bills",           targetWeight: 5,  bucket: "Hedge",       manualValueTHB: 0 },
-  { id: "tsla", ticker: "TSLA",    name: "Tesla",             targetWeight: 5,  bucket: "Speculative", manualValueTHB: 0 },
-  { id: "lly",  ticker: "LLY",     name: "Eli Lilly",         targetWeight: 5,  bucket: "Speculative", manualValueTHB: 0 },
-  { id: "sofi", ticker: "SOFI",    name: "SoFi Technologies", targetWeight: 5,  bucket: "Speculative", manualValueTHB: 0 },
+  { id: "btc",  ticker: "BTC-USD", name: "Bitcoin",           targetWeight: 30, bucket: "Core",        manualValueTHB: 0, unitsHeld: 0 },
+  { id: "spy",  ticker: "SPY",     name: "S&P 500 ETF",       targetWeight: 20, bucket: "Core",        manualValueTHB: 0, unitsHeld: 0 },
+  { id: "goog", ticker: "GOOG",    name: "Alphabet",          targetWeight: 15, bucket: "Growth",      manualValueTHB: 0, unitsHeld: 0 },
+  { id: "nvda", ticker: "NVDA",    name: "NVIDIA",            targetWeight: 10, bucket: "Growth",      manualValueTHB: 0, unitsHeld: 0 },
+  { id: "gld",  ticker: "GLD",     name: "Gold ETF",          targetWeight: 5,  bucket: "Hedge",       manualValueTHB: 0, unitsHeld: 0 },
+  { id: "sgov", ticker: "SGOV",    name: "T-Bills",           targetWeight: 5,  bucket: "Hedge",       manualValueTHB: 0, unitsHeld: 0 },
+  { id: "tsla", ticker: "TSLA",    name: "Tesla",             targetWeight: 5,  bucket: "Speculative", manualValueTHB: 0, unitsHeld: 0 },
+  { id: "lly",  ticker: "LLY",     name: "Eli Lilly",         targetWeight: 5,  bucket: "Speculative", manualValueTHB: 0, unitsHeld: 0 },
+  { id: "sofi", ticker: "SOFI",    name: "SoFi Technologies", targetWeight: 5,  bucket: "Speculative", manualValueTHB: 0, unitsHeld: 0 },
 ];
 
 interface GrowthPortfolioState {
@@ -115,4 +115,18 @@ export function assetTotalUnits(assetId: string, dcaEntries: DCAEntry[]): number
   return dcaEntries
     .filter((e) => e.assetId === assetId)
     .reduce((sum, e) => sum + e.unitsAdded, 0);
+}
+
+/** Returns current USD value using unitsHeld → DCA entries → manualValueTHB priority. */
+export function assetValueUsd(
+  asset: PortfolioAsset,
+  dcaEntries: DCAEntry[],
+  price: number | undefined,
+  usdthbRate: number
+): number {
+  const held = asset.unitsHeld ?? 0;
+  if (held > 0 && price !== undefined) return held * price;
+  const dcaUnits = assetTotalUnits(asset.id, dcaEntries);
+  if (dcaUnits > 0 && price !== undefined) return dcaUnits * price;
+  return usdthbRate > 0 ? (asset.manualValueTHB ?? 0) / usdthbRate : 0;
 }

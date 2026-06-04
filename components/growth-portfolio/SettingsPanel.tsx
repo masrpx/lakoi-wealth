@@ -34,7 +34,7 @@ function NewAssetForm({ onAdd }: { onAdd: (a: PortfolioAsset) => void }) {
 
   function handleAdd() {
     if (!ticker || !name || !weight) return;
-    onAdd({ id: crypto.randomUUID(), ticker: ticker.toUpperCase(), name, targetWeight: parseFloat(weight), bucket, manualValueTHB: 0 });
+    onAdd({ id: crypto.randomUUID(), ticker: ticker.toUpperCase(), name, targetWeight: parseFloat(weight), bucket, manualValueTHB: 0, unitsHeld: 0 });
     setTicker(""); setName(""); setWeight("");
   }
 

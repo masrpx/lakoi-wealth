@@ -7,6 +7,7 @@ export interface PortfolioAsset {
   targetWeight: number; // %
   bucket: Bucket;
   manualValueTHB: number; // ฿ fallback when no DCA entries
+  unitsHeld: number; // primary: units × live price = current value; 0 = not set
 }
 
 export interface DCAEntry {
