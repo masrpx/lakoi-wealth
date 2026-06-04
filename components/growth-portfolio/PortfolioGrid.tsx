@@ -60,7 +60,7 @@ export function PortfolioGrid({ assets, dcaEntries, priceCache, signals, usdthbR
     <div className="flex flex-col">
       {/* Column headers — desktop only */}
       <div
-        className={`hidden md:grid items-center gap-x-2 px-4 py-2 sticky top-[57px] z-10 ${GRID}`}
+        className={`hidden md:grid items-center gap-x-2 px-4 py-2 sticky top-0 z-10 ${GRID}`}
         style={{ background: "var(--bg-elevated)", borderBottom: "1px solid var(--border)" }}
       >
         <span className={CH}>Asset</span>

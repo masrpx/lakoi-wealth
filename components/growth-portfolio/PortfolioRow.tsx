@@ -59,8 +59,17 @@ export function PortfolioRow({ asset, dcaEntries, priceCache, totalValueUsd, sig
   const sig = signal ? SIG_STYLE[signal.composite] : null;
 
   function openEdit() {
-    setEditValue(units > 0 ? String(units) : "");
-    setEditMode("units");
+    const manualThb = asset.manualValueTHB ?? 0;
+    if (units > 0) {
+      setEditValue(String(units));
+      setEditMode("units");
+    } else if (manualThb > 0) {
+      setEditValue(String(manualThb));
+      setEditMode("thb");
+    } else {
+      setEditValue("");
+      setEditMode("units");
+    }
     setIsEditing(true);
   }
 
@@ -70,7 +79,11 @@ export function PortfolioRow({ asset, dcaEntries, priceCache, totalValueUsd, sig
       if (editMode === "units") {
         onUpdateAsset(asset.id, { unitsHeld: parsed });
       } else if (price !== undefined && usdthbRate > 0) {
+        // Live price available — convert ฿ to units so value tracks market
         onUpdateAsset(asset.id, { unitsHeld: parsed / usdthbRate / price });
+      } else {
+        // No live price (e.g. Thai mutual fund) — store ฿ value directly
+        onUpdateAsset(asset.id, { manualValueTHB: parsed, unitsHeld: 0 });
       }
     }
     setIsEditing(false);
@@ -105,7 +118,7 @@ export function PortfolioRow({ asset, dcaEntries, priceCache, totalValueUsd, sig
             <>
               <div className="flex gap-0.5">
                 {(["units", "thb"] as const).map((m) => (
-                  <button key={m} onClick={() => setEditMode(m)} style={{ ...mh, background: editMode === m ? "var(--gold-500)" : "var(--muted)", color: editMode === m ? "#fff" : "var(--muted-foreground)" }} className="text-[9px] font-mono px-1.5 py-0.5 rounded transition-colors">
+                  <button key={m} onMouseDown={(e) => { e.preventDefault(); setEditMode(m); }} style={{ ...mh, background: editMode === m ? "var(--gold-500)" : "var(--muted)", color: editMode === m ? "#fff" : "var(--muted-foreground)" }} className="text-[9px] font-mono px-1.5 py-0.5 rounded transition-colors">
                     {m === "units" ? "# units" : "฿ value"}
                   </button>
                 ))}
@@ -188,7 +201,7 @@ export function PortfolioRow({ asset, dcaEntries, priceCache, totalValueUsd, sig
         {isEditing && (
           <div className="flex items-center gap-2 mt-2">
             {(["units", "thb"] as const).map((m) => (
-              <button key={m} onClick={() => setEditMode(m)} style={{ ...mh, background: editMode === m ? "var(--gold-500)" : "var(--muted)", color: editMode === m ? "#fff" : "var(--muted-foreground)" }} className="text-[10px] font-mono px-2 py-1 rounded transition-colors">
+              <button key={m} onMouseDown={(e) => { e.preventDefault(); setEditMode(m); }} style={{ ...mh, background: editMode === m ? "var(--gold-500)" : "var(--muted)", color: editMode === m ? "#fff" : "var(--muted-foreground)" }} className="text-[10px] font-mono px-2 py-1 rounded transition-colors">
                 {m === "units" ? "# units" : "฿ value"}
               </button>
             ))}
