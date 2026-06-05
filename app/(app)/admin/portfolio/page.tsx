@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
-import { useGrowthPortfolioStore } from "@/lib/store/growthPortfolio";
+import { useGrowthPortfolioStore, assetValueUsd } from "@/lib/store/growthPortfolio";
 import { computeAssetSignal } from "@/lib/calculations/indicators";
 import { PortfolioGrid } from "@/components/growth-portfolio/PortfolioGrid";
 import type { AssetSignal, PriceData } from "@/types/growthPortfolio";
@@ -60,9 +60,7 @@ export default function GrowthPortfolioPage() {
 
   const totalThb = assets.reduce((sum, a) => {
     const pd = priceCache[a.ticker];
-    const held = a.unitsHeld ?? 0;
-    if (held > 0 && pd?.price) return sum + held * pd.price * usdthbRate;
-    return sum + (a.manualValueTHB ?? 0);
+    return sum + assetValueUsd(a, dcaEntries, pd?.price, usdthbRate) * usdthbRate;
   }, 0);
 
   return (

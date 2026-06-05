@@ -117,13 +117,18 @@ export function assetTotalUnits(assetId: string, dcaEntries: DCAEntry[]): number
     .reduce((sum, e) => sum + e.unitsAdded, 0);
 }
 
-/** Returns current USD value using unitsHeld → DCA entries → manualValueTHB priority. */
+/** Returns current USD value using HW+EX breakdown → unitsHeld → DCA entries → manualValueTHB priority. */
 export function assetValueUsd(
   asset: PortfolioAsset,
   dcaEntries: DCAEntry[],
   price: number | undefined,
   usdthbRate: number
 ): number {
+  if (asset.hardWalletUnits !== undefined || asset.exchangeUnits !== undefined) {
+    const totalUnits = (asset.hardWalletUnits ?? 0) + (asset.exchangeUnits ?? 0);
+    if (price !== undefined) return totalUnits * price;
+    return usdthbRate > 0 ? (asset.manualValueTHB ?? 0) / usdthbRate : 0;
+  }
   const held = asset.unitsHeld ?? 0;
   if (held > 0 && price !== undefined) return held * price;
   const dcaUnits = assetTotalUnits(asset.id, dcaEntries);

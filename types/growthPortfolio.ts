@@ -8,6 +8,9 @@ export interface PortfolioAsset {
   bucket: Bucket;
   manualValueTHB: number; // ฿ fallback when no DCA entries
   unitsHeld: number; // primary: units × live price = current value; 0 = not set
+  // Crypto breakdown — when either is set, overrides unitsHeld
+  hardWalletUnits?: number;
+  exchangeUnits?: number;
 }
 
 export interface DCAEntry {

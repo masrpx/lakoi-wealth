@@ -7,7 +7,7 @@ import { assetValueUsd } from "@/lib/store/growthPortfolio";
 import { PortfolioRow } from "./PortfolioRow";
 
 const BUCKETS: Bucket[] = ["Core", "Growth", "Hedge", "Speculative"];
-const GRID = "grid-cols-[1fr_82px_50px_110px_92px_46px_70px_50px_56px]";
+const GRID = "grid-cols-[1fr_82px_50px_110px_92px_46px_70px_50px_56px_28px]";
 const CH = "text-[10px] uppercase tracking-widest text-muted-foreground select-none";
 
 function fmtThb(v: number): string {
@@ -72,6 +72,7 @@ export function PortfolioGrid({ assets, dcaEntries, priceCache, signals, usdthbR
         <span className={`${CH} text-right`}>Target%</span>
         <span className={`${CH} text-right`}>Drift</span>
         <span className={`${CH} text-right`}>Sig</span>
+        <span />
       </div>
 
       {/* Rows */}
@@ -86,6 +87,7 @@ export function PortfolioGrid({ assets, dcaEntries, priceCache, signals, usdthbR
           usdthbRate={usdthbRate}
           even={i % 2 === 0}
           onUpdateAsset={onUpdateAsset}
+          onRemoveAsset={onRemoveAsset}
         />
       ))}
 
@@ -103,7 +105,7 @@ export function PortfolioGrid({ assets, dcaEntries, priceCache, signals, usdthbR
         <p className="text-right text-xs font-mono font-semibold" style={{ color: targetOk ? "#2dd4bf" : "#fb7185" }}>
           {totalTarget.toFixed(1)}%{!targetOk && " ✗"}
         </p>
-        <span /><span />
+        <span /><span /><span />
       </div>
 
       {/* Mobile footer */}
