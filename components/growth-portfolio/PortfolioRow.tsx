@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import type { PortfolioAsset, PriceData, DCAEntry, AssetSignal } from "@/types/growthPortfolio";
 import { assetValueUsd, assetTotalUnits } from "@/lib/store/growthPortfolio";
+import { rebalAction } from "@/lib/calculations/rules";
 
 const BUCKET_DOT: Record<string, string> = {
   Core: "#60a5fa",
@@ -104,6 +105,12 @@ export function PortfolioRow({ asset, dcaEntries, priceCache, totalValueUsd, sig
   const rowBg = even ? "var(--background)" : "var(--card)";
   const mh = { minHeight: "unset" } as const;
   const driftColor = Math.abs(drift) < 1.5 ? "var(--muted-foreground)" : drift > 0 ? "#fb7185" : "#2dd4bf";
+  const action = asset.bucket !== "Hedge" ? rebalAction(actualPct, asset.targetWeight, asset.bucket) : null;
+  const actionStyle = action === "TRIM"
+    ? { bg: "rgba(251,113,133,0.12)", fg: "#fb7185" }
+    : action === "ADD"
+      ? { bg: "rgba(45,212,191,0.12)", fg: "#2dd4bf" }
+      : null;
 
   return (
     <div style={{ background: rowBg, borderBottom: "1px solid var(--border)" }}>
@@ -173,9 +180,16 @@ export function PortfolioRow({ asset, dcaEntries, priceCache, totalValueUsd, sig
           <span className="text-xs text-muted-foreground">%</span>
         </div>
 
-        <p className="text-right text-xs font-mono tabular-nums font-medium" style={{ color: driftColor }}>
-          {drift > 0 ? "+" : ""}{drift.toFixed(1)}%
-        </p>
+        <div className="flex flex-col items-end gap-0.5">
+          <p className="text-xs font-mono tabular-nums font-medium" style={{ color: driftColor }}>
+            {drift > 0 ? "+" : ""}{drift.toFixed(1)}%
+          </p>
+          {actionStyle && (
+            <span className="text-[9px] font-bold px-1 py-px rounded leading-none" style={{ background: actionStyle.bg, color: actionStyle.fg }}>
+              {action}
+            </span>
+          )}
+        </div>
 
         {sig ? (
           <div className="flex justify-end">

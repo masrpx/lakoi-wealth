@@ -5,6 +5,7 @@ import { RefreshCw, Cloud, CloudOff } from "lucide-react";
 import { useGrowthPortfolioStore, assetValueUsd } from "@/lib/store/growthPortfolio";
 import { computeAssetSignal } from "@/lib/calculations/indicators";
 import { PortfolioGrid } from "@/components/growth-portfolio/PortfolioGrid";
+import { PlaybookPanel } from "@/components/growth-portfolio/PlaybookPanel";
 import type { AssetSignal, PriceData } from "@/types/growthPortfolio";
 
 function fmtThb(v: number): string {
@@ -111,6 +112,28 @@ export default function GrowthPortfolioPage() {
     return sum + assetValueUsd(a, dcaEntries, pd?.price, usdthbRate) * usdthbRate;
   }, 0);
 
+  const totalValueUsd = totalThb / (usdthbRate || 1);
+
+  const btcAsset = assets.find((a) => a.ticker === "BTC-USD");
+  const btcActualPct = useMemo(() => {
+    if (!btcAsset || totalValueUsd <= 0) return 0;
+    const pd = priceCache["BTC-USD"];
+    return (assetValueUsd(btcAsset, dcaEntries, pd?.price, usdthbRate) / totalValueUsd) * 100;
+  }, [btcAsset, dcaEntries, priceCache, usdthbRate, totalValueUsd]);
+
+  const hedgeActualPct = useMemo(() => {
+    if (totalValueUsd <= 0) return 0;
+    return assets
+      .filter((a) => a.bucket === "Hedge")
+      .reduce((sum, a) => {
+        const pd = priceCache[a.ticker];
+        return sum + (assetValueUsd(a, dcaEntries, pd?.price, usdthbRate) / totalValueUsd) * 100;
+      }, 0);
+  }, [assets, dcaEntries, priceCache, usdthbRate, totalValueUsd]);
+
+  const hedgeTargetWeight = assets.filter((a) => a.bucket === "Hedge").reduce((s, a) => s + a.targetWeight, 0);
+  const btcTargetWeight = btcAsset?.targetWeight ?? 21;
+
   const syncIcon = syncStatus === "loading" ? (
     <Cloud className="h-3.5 w-3.5 animate-pulse" style={{ color: "var(--gold-500)" }} />
   ) : syncStatus === "synced" ? (
@@ -165,6 +188,13 @@ export default function GrowthPortfolioPage() {
           onUpdateAsset={updateAsset}
           onAddAsset={addAsset}
           onRemoveAsset={removeAsset}
+        />
+        <PlaybookPanel
+          btcActualPct={btcActualPct}
+          btcTargetWeight={btcTargetWeight}
+          hedgeActualPct={hedgeActualPct}
+          hedgeTargetWeight={hedgeTargetWeight}
+          spyData={priceCache["SPY"]}
         />
       </div>
     </div>
