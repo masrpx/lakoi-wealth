@@ -91,26 +91,6 @@ export const useGrowthPortfolioStore = create<GrowthPortfolioState>()(
   )
 );
 
-/**
- * Returns USD value for an asset.
- * DCA path: units × livePrice (already in USD).
- * Manual path: manualValueTHB ÷ usdthbRate.
- */
-export function assetCurrentValue(
-  assetId: string,
-  manualValueTHB: number,
-  dcaEntries: DCAEntry[],
-  price: number | undefined,
-  usdthbRate: number
-): number {
-  const entries = dcaEntries.filter((e) => e.assetId === assetId);
-  if (entries.length > 0 && price !== undefined) {
-    const units = entries.reduce((sum, e) => sum + e.unitsAdded, 0);
-    return units * price;
-  }
-  return usdthbRate > 0 ? manualValueTHB / usdthbRate : 0;
-}
-
 export function assetTotalUnits(assetId: string, dcaEntries: DCAEntry[]): number {
   return dcaEntries
     .filter((e) => e.assetId === assetId)

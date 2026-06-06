@@ -12,7 +12,7 @@ const CH = "text-[10px] uppercase tracking-widest text-muted-foreground select-n
 
 function fmtThb(v: number): string {
   if (v === 0) return "–";
-  if (v >= 1_000_000) return `฿${(v / 1_000_000).toFixed(2)}M`;
+  if (v >= 1_000_000) return `฿${(v / 1_000_000).toFixed(3)}M`;
   return `฿${v.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 }
 

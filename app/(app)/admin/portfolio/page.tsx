@@ -1,26 +1,74 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { RefreshCw, Cloud, CloudOff } from "lucide-react";
 import { useGrowthPortfolioStore, assetValueUsd } from "@/lib/store/growthPortfolio";
 import { computeAssetSignal } from "@/lib/calculations/indicators";
 import { PortfolioGrid } from "@/components/growth-portfolio/PortfolioGrid";
 import type { AssetSignal, PriceData } from "@/types/growthPortfolio";
 
 function fmtThb(v: number): string {
-  if (v >= 1_000_000) return `฿${(v / 1_000_000).toFixed(2)}M`;
+  if (v >= 1_000_000) return `฿${(v / 1_000_000).toFixed(3)}M`;
   return `฿${v.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 }
+
+type SyncStatus = "idle" | "loading" | "synced" | "error";
 
 export default function GrowthPortfolioPage() {
   const {
     assets, dcaEntries, priceCache, usdthbRate,
     addAsset, updateAsset, removeAsset,
     setPrice, markPricesStale, setUsdthbRate,
+    importJSON, exportJSON,
   } = useGrowthPortfolioStore();
 
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initialSyncDone = useRef(false);
+  const justLoaded = useRef(false);
+
+  // On mount: load from blob (cloud → localStorage)
+  useEffect(() => {
+    async function loadFromCloud() {
+      setSyncStatus("loading");
+      try {
+        const res = await fetch("/api/portfolio/sync");
+        const data = await res.json();
+        if (data) {
+          justLoaded.current = true;
+          importJSON(JSON.stringify(data));
+        }
+        setSyncStatus("synced");
+      } catch {
+        setSyncStatus("error");
+      } finally {
+        initialSyncDone.current = true;
+      }
+    }
+    loadFromCloud();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // On any portfolio change: debounced save to blob
+  useEffect(() => {
+    if (!initialSyncDone.current) return;
+    if (justLoaded.current) { justLoaded.current = false; return; }
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(async () => {
+      setSyncStatus("loading");
+      try {
+        await fetch("/api/portfolio/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: exportJSON(),
+        });
+        setSyncStatus("synced");
+      } catch {
+        setSyncStatus("error");
+      }
+    }, 2000);
+  }, [assets, dcaEntries, usdthbRate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchPrices = useCallback(async () => {
     setLoading(true);
@@ -63,6 +111,14 @@ export default function GrowthPortfolioPage() {
     return sum + assetValueUsd(a, dcaEntries, pd?.price, usdthbRate) * usdthbRate;
   }, 0);
 
+  const syncIcon = syncStatus === "loading" ? (
+    <Cloud className="h-3.5 w-3.5 animate-pulse" style={{ color: "var(--gold-500)" }} />
+  ) : syncStatus === "synced" ? (
+    <Cloud className="h-3.5 w-3.5" style={{ color: "#2dd4bf" }} />
+  ) : syncStatus === "error" ? (
+    <CloudOff className="h-3.5 w-3.5" style={{ color: "#fb7185" }} />
+  ) : null;
+
   return (
     <div className="flex flex-col min-h-screen" style={{ background: "var(--bg-base)" }}>
       {/* Sticky header */}
@@ -80,9 +136,14 @@ export default function GrowthPortfolioPage() {
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground">USD/THB</p>
           <p className="text-sm font-mono tabular-nums">{usdthbRate.toFixed(2)}</p>
         </div>
-        <div className="text-right text-[10px] text-muted-foreground hidden sm:block">
+        <div className="flex items-center gap-1.5 text-right text-[10px] text-muted-foreground hidden sm:block">
           {loading ? "Fetching…" : lastUpdated ? lastUpdated.toLocaleTimeString() : "Not loaded"}
         </div>
+        {syncIcon && (
+          <div className="flex items-center" title={syncStatus === "error" ? "Sync failed" : syncStatus === "loading" ? "Saving…" : "Synced"}>
+            {syncIcon}
+          </div>
+        )}
         <button
           onClick={fetchPrices}
           disabled={loading}

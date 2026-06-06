@@ -19,7 +19,7 @@ const SIG_STYLE: Record<string, { bg: string; fg: string }> = {
 
 function fmtThb(v: number): string {
   if (v === 0) return "–";
-  if (v >= 1_000_000) return `฿${(v / 1_000_000).toFixed(2)}M`;
+  if (v >= 1_000_000) return `฿${(v / 1_000_000).toFixed(3)}M`;
   return `฿${v.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 }
 function fmtUnits(n: number): string {

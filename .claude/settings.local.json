@@ -11,7 +11,11 @@
       "Bash(curl *)",
       "Bash(gh api *)",
       "Bash(claude plugin *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(vercel env *)",
+      "Bash(vercel link *)",
+      "Bash(grep -v \"^$\")",
+      "Bash(vercel *)"
     ]
   }
 }
