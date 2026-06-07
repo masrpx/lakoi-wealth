@@ -55,7 +55,7 @@ export async function GET(
     return NextResponse.json({
       ticker,
       price: meta.regularMarketPrice,
-      prevClose: meta.previousClose ?? meta.chartPreviousClose ?? meta.regularMarketPrice,
+      prevClose: meta.previousClose ?? (closes.length > 0 ? closes[closes.length - 1] : meta.regularMarketPrice),
       closes,
       highs,
       updatedAt: Date.now(),
