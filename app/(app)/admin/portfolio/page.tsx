@@ -106,9 +106,20 @@ export default function GrowthPortfolioPage() {
       }),
     ]);
     void rateResult;
-    if (assetResults.some((r) => r.status === "fulfilled")) setLastUpdated(new Date());
+    const anyPriceFetched = assetResults.some((r) => r.status === "fulfilled");
+    if (anyPriceFetched) setLastUpdated(new Date());
     setLoading(false);
-  }, [assets, setPrice, setUsdthbRate]);
+    if (anyPriceFetched && initialSyncDone.current) {
+      setSyncStatus("loading");
+      fetch("/api/portfolio/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: exportJSON(),
+      })
+        .then(() => setSyncStatus("synced"))
+        .catch(() => setSyncStatus("error"));
+    }
+  }, [assets, setPrice, setUsdthbRate, exportJSON]);
 
   useEffect(() => {
     markPricesStale();
