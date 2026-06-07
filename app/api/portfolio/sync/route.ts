@@ -6,9 +6,12 @@ const KEY = "portfolio/lakoi-growth-portfolio.json";
 export async function GET() {
   try {
     const { blobs } = await list({ prefix: KEY });
-    if (blobs.length === 0) return NextResponse.json({ debug: "no blobs found", key: KEY });
-    const res = await fetch(blobs[0].downloadUrl, { cache: "no-store" });
-    if (!res.ok) return NextResponse.json({ debug: `download failed: ${res.status}`, url: blobs[0].downloadUrl });
+    if (blobs.length === 0) return NextResponse.json(null);
+    const res = await fetch(blobs[0].url, {
+      cache: "no-store",
+      headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+    });
+    if (!res.ok) return NextResponse.json(null);
     return NextResponse.json(await res.json());
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });
