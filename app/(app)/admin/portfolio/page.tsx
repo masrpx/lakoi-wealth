@@ -40,6 +40,12 @@ export default function GrowthPortfolioPage() {
         if (data) {
           justLoaded.current = true;
           importJSON(JSON.stringify(data));
+        } else {
+          await fetch("/api/portfolio/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: exportJSON(),
+          });
         }
         setSyncStatus("synced");
       } catch {
