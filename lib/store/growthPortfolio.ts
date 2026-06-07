@@ -76,14 +76,16 @@ export const useGrowthPortfolioStore = create<GrowthPortfolioState>()(
           return sum + assetValueUsd(a, dcaEntries, priceCache[a.ticker]?.price, usdthbRate);
         }, 0);
         const currentWeights: Record<string, number> = {};
+        const currentValuesTHB: Record<string, number> = {};
         const rebalActions: Record<string, "TRIM" | "ADD" | null> = {};
         for (const a of assets) {
           const valueUsd = assetValueUsd(a, dcaEntries, priceCache[a.ticker]?.price, usdthbRate);
           const currentPct = totalValueUsd > 0 ? parseFloat(((valueUsd / totalValueUsd) * 100).toFixed(2)) : 0;
           currentWeights[a.id] = currentPct;
+          currentValuesTHB[a.id] = parseFloat((valueUsd * usdthbRate).toFixed(2));
           rebalActions[a.id] = a.bucket !== "Hedge" ? rebalAction(currentPct, a.targetWeight, a.bucket) : null;
         }
-        return JSON.stringify({ assets, dcaEntries, usdthbRate, currentWeights, rebalActions }, null, 2);
+        return JSON.stringify({ assets, dcaEntries, usdthbRate, currentWeights, currentValuesTHB, rebalActions }, null, 2);
       },
 
       importJSON: (json) => {
