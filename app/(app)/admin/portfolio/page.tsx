@@ -6,7 +6,7 @@ import { useGrowthPortfolioStore, assetValueUsd } from "@/lib/store/growthPortfo
 import { computeAssetSignal } from "@/lib/calculations/indicators";
 import { PortfolioGrid } from "@/components/growth-portfolio/PortfolioGrid";
 import { PlaybookPanel } from "@/components/growth-portfolio/PlaybookPanel";
-import type { AssetSignal, PriceData } from "@/types/growthPortfolio";
+import type { AssetSignal, DCAEntry, PriceData } from "@/types/growthPortfolio";
 
 function fmtThb(v: number): string {
   if (v >= 1_000_000) return `฿${(v / 1_000_000).toFixed(3)}M`;
@@ -18,7 +18,7 @@ type SyncStatus = "idle" | "loading" | "synced" | "error";
 export default function GrowthPortfolioPage() {
   const {
     assets, dcaEntries, priceCache, usdthbRate,
-    addAsset, updateAsset, removeAsset,
+    addAsset, updateAsset, removeAsset, addDCAEntry,
     setPrice, markPricesStale, setUsdthbRate,
     importJSON, exportJSON,
   } = useGrowthPortfolioStore();
@@ -70,6 +70,19 @@ export default function GrowthPortfolioPage() {
       }
     }, 2000);
   }, [assets, dcaEntries, usdthbRate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleAddDCA(entry: Omit<DCAEntry, "id">) {
+    const asset = assets.find(a => a.id === entry.assetId);
+    if (!asset) return;
+    addDCAEntry({ ...entry, id: crypto.randomUUID() });
+    const hasCryptoBreakdown = asset.hardWalletUnits !== undefined || asset.exchangeUnits !== undefined;
+    if (hasCryptoBreakdown) {
+      updateAsset(entry.assetId, { exchangeUnits: Math.max(0, (asset.exchangeUnits ?? 0) + entry.unitsAdded) });
+    } else if ((asset.unitsHeld ?? 0) > 0) {
+      updateAsset(entry.assetId, { unitsHeld: Math.max(0, (asset.unitsHeld ?? 0) + entry.unitsAdded) });
+    }
+    // Pure DCA-entry assets (unitsHeld=0, no breakdown): DCAEntry alone updates the total
+  }
 
   const fetchPrices = useCallback(async () => {
     setLoading(true);
@@ -188,6 +201,7 @@ export default function GrowthPortfolioPage() {
           onUpdateAsset={updateAsset}
           onAddAsset={addAsset}
           onRemoveAsset={removeAsset}
+          onAddDCA={handleAddDCA}
         />
         <PlaybookPanel
           btcActualPct={btcActualPct}

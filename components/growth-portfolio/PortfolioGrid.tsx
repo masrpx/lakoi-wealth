@@ -25,11 +25,12 @@ interface Props {
   onUpdateAsset: (id: string, patch: Partial<PortfolioAsset>) => void;
   onAddAsset: (a: PortfolioAsset) => void;
   onRemoveAsset: (id: string) => void;
+  onAddDCA: (entry: Omit<DCAEntry, "id">) => void;
 }
 
 const EMPTY_NEW = { ticker: "", name: "", weight: "", bucket: "Growth" as Bucket };
 
-export function PortfolioGrid({ assets, dcaEntries, priceCache, signals, usdthbRate, onUpdateAsset, onAddAsset, onRemoveAsset }: Props) {
+export function PortfolioGrid({ assets, dcaEntries, priceCache, signals, usdthbRate, onUpdateAsset, onAddAsset, onRemoveAsset, onAddDCA }: Props) {
   const [showAdd, setShowAdd] = useState(false);
   const [newAsset, setNewAsset] = useState(EMPTY_NEW);
 
@@ -88,6 +89,7 @@ export function PortfolioGrid({ assets, dcaEntries, priceCache, signals, usdthbR
           even={i % 2 === 0}
           onUpdateAsset={onUpdateAsset}
           onRemoveAsset={onRemoveAsset}
+          onAddDCA={onAddDCA}
         />
       ))}
 

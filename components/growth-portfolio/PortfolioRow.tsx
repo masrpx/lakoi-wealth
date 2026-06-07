@@ -41,15 +41,19 @@ interface Props {
   even: boolean;
   onUpdateAsset: (id: string, patch: Partial<PortfolioAsset>) => void;
   onRemoveAsset: (id: string) => void;
+  onAddDCA: (entry: Omit<DCAEntry, "id">) => void;
 }
 
 const GRID = "grid-cols-[1fr_82px_50px_110px_92px_46px_70px_50px_56px_28px]";
 const CH = "text-[10px] uppercase tracking-widest text-muted-foreground";
 
-export function PortfolioRow({ asset, dcaEntries, priceCache, totalValueUsd, signal, usdthbRate, even, onUpdateAsset, onRemoveAsset }: Props) {
+export function PortfolioRow({ asset, dcaEntries, priceCache, totalValueUsd, signal, usdthbRate, even, onUpdateAsset, onRemoveAsset, onAddDCA }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [editMode, setEditMode] = useState<"units" | "thb">("units");
   const [editValue, setEditValue] = useState("");
+  const [dcaOpen, setDcaOpen] = useState(false);
+  const [dcaType, setDcaType] = useState<"buy" | "sell">("buy");
+  const [dcaAmount, setDcaAmount] = useState("");
 
   const isCrypto = asset.ticker.endsWith("-USD");
   const hasBreakdown = isCrypto && (asset.hardWalletUnits !== undefined || asset.exchangeUnits !== undefined);
@@ -67,6 +71,28 @@ export function PortfolioRow({ asset, dcaEntries, priceCache, totalValueUsd, sig
   const drift = actualPct - asset.targetWeight;
   const change24 = pd ? ((pd.price - pd.prevClose) / pd.prevClose) * 100 : null;
   const sig = signal ? SIG_STYLE[signal.composite] : null;
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  // DCA panel compute
+  const dcaPriceThb = price !== undefined ? price * usdthbRate : 0;
+  const dcaAmountNum = parseFloat(dcaAmount) || 0;
+  const dcaUnitsPreview = dcaAmountNum > 0 && dcaPriceThb > 0 ? dcaAmountNum / dcaPriceThb : 0;
+  const canConfirmDCA = dcaAmountNum > 0 && dcaPriceThb > 0 && (dcaType === "buy" || dcaUnitsPreview <= units);
+
+  function commitDCA() {
+    if (!canConfirmDCA) return;
+    const signedUnits = dcaType === "buy" ? dcaUnitsPreview : -dcaUnitsPreview;
+    onAddDCA({
+      assetId: asset.id,
+      date: today,
+      amountThb: dcaType === "buy" ? dcaAmountNum : -dcaAmountNum,
+      priceAtPurchase: dcaPriceThb,
+      unitsAdded: signedUnits,
+    });
+    setDcaOpen(false);
+    setDcaAmount("");
+  }
 
   function openEdit() {
     const manualThb = asset.manualValueTHB ?? 0;
@@ -112,6 +138,9 @@ export function PortfolioRow({ asset, dcaEntries, priceCache, totalValueUsd, sig
       ? { bg: "rgba(45,212,191,0.12)", fg: "#2dd4bf" }
       : null;
 
+  const dcaBtnColor = dcaType === "buy" ? "#2dd4bf" : "#fb7185";
+  const dcaBtnBg = dcaType === "buy" ? "rgba(45,212,191,0.15)" : "rgba(251,113,133,0.15)";
+
   return (
     <div style={{ background: rowBg, borderBottom: "1px solid var(--border)" }}>
       {/* ── Desktop ── */}
@@ -128,11 +157,13 @@ export function PortfolioRow({ asset, dcaEntries, priceCache, totalValueUsd, sig
           {price !== undefined ? fmtThb(price * usdthbRate) : <span className="text-muted-foreground">…</span>}
         </p>
 
-        <p className="text-right text-xs font-mono tabular-nums" style={{ color: change24 === null ? "var(--muted-foreground)" : change24 >= 0 ? "#2dd4bf" : "#fb7185" }}>
-          {change24 !== null ? `${change24 >= 0 ? "+" : ""}${change24.toFixed(1)}%` : "–"}
-        </p>
+        <div className="flex flex-col items-end">
+          <p className="text-right text-xs font-mono tabular-nums" style={{ color: change24 === null ? "var(--muted-foreground)" : change24 >= 0 ? "#2dd4bf" : "#fb7185" }}>
+            {change24 !== null ? `${change24 >= 0 ? "+" : ""}${change24.toFixed(1)}%` : "–"}
+          </p>
+        </div>
 
-        {/* Holdings — crypto with breakdown: show sum only; others: click-to-edit */}
+        {/* Holdings */}
         <div className="flex flex-col items-end justify-center gap-0.5">
           {isCrypto ? (
             <span className="text-xs font-mono tabular-nums" style={{ color: units > 0 ? "inherit" : "var(--muted-foreground)" }}>
@@ -165,9 +196,22 @@ export function PortfolioRow({ asset, dcaEntries, priceCache, totalValueUsd, sig
           )}
         </div>
 
-        <p className="text-right text-sm font-mono font-semibold tabular-nums" style={{ color: "var(--gold-500)" }}>
-          {fmtThb(valueThb)}
-        </p>
+        {/* Value ฿ — with DCA trigger */}
+        <div className="flex items-center justify-end gap-1">
+          <p className="text-right text-sm font-mono font-semibold tabular-nums" style={{ color: "var(--gold-500)" }}>
+            {fmtThb(valueThb)}
+          </p>
+          {price !== undefined && (
+            <button
+              onClick={() => { setDcaOpen(v => !v); setDcaAmount(""); }}
+              style={{ ...mh, color: dcaOpen ? "var(--gold-500)" : "var(--muted-foreground)", opacity: dcaOpen ? 1 : 0.35 }}
+              className="text-[11px] font-bold leading-none transition-opacity hover:opacity-80"
+              title="DCA in / Sell out"
+            >
+              ±
+            </button>
+          )}
+        </div>
 
         <p className="text-right text-xs font-mono tabular-nums text-muted-foreground">{actualPct.toFixed(1)}%</p>
 
@@ -211,6 +255,77 @@ export function PortfolioRow({ asset, dcaEntries, priceCache, totalValueUsd, sig
           <Trash2 className="h-3.5 w-3.5" style={{ color: "#fb7185" }} />
         </button>
       </div>
+
+      {/* ── Desktop DCA sub-row ── */}
+      {dcaOpen && price !== undefined && (
+        <div
+          className="hidden md:flex items-center gap-3 px-4 py-2 flex-wrap"
+          style={{ borderTop: "1px dashed rgba(255,255,255,0.06)", background: "rgba(0,0,0,0.1)" }}
+        >
+          <div className="flex gap-0.5 shrink-0">
+            {(["buy", "sell"] as const).map(t => (
+              <button
+                key={t}
+                onMouseDown={(e) => { e.preventDefault(); setDcaType(t); }}
+                className="text-[10px] font-bold px-2.5 py-1 rounded uppercase transition-colors"
+                style={{
+                  ...mh,
+                  background: dcaType === t
+                    ? (t === "buy" ? "rgba(45,212,191,0.2)" : "rgba(251,113,133,0.2)")
+                    : "var(--muted)",
+                  color: dcaType === t
+                    ? (t === "buy" ? "#2dd4bf" : "#fb7185")
+                    : "var(--muted-foreground)",
+                }}
+              >
+                {t === "buy" ? "DCA In" : "Sell Out"}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-1.5 min-w-32">
+            <span className="text-[10px] text-muted-foreground">฿</span>
+            <input
+              autoFocus
+              type="number"
+              min={0}
+              placeholder="Amount"
+              value={dcaAmount}
+              onChange={e => setDcaAmount(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === "Enter") commitDCA();
+                if (e.key === "Escape") { setDcaOpen(false); setDcaAmount(""); }
+              }}
+              className="flex-1 text-right text-xs font-mono bg-transparent outline-none border-b py-0.5"
+              style={{ ...mh, borderColor: dcaType === "buy" ? "#2dd4bf" : "#fb7185" }}
+            />
+          </div>
+
+          {dcaUnitsPreview > 0 && (
+            <span className="text-[10px] font-mono text-muted-foreground">
+              ≈ {fmtUnits(dcaUnitsPreview)} @ {fmtThb(dcaPriceThb)}
+            </span>
+          )}
+
+          <div className="flex gap-2 ml-auto shrink-0">
+            <button
+              onClick={commitDCA}
+              disabled={!canConfirmDCA}
+              className="text-[10px] font-bold px-3 py-1 rounded transition-opacity disabled:opacity-30"
+              style={{ ...mh, background: dcaBtnBg, color: dcaBtnColor }}
+            >
+              Confirm
+            </button>
+            <button
+              onClick={() => { setDcaOpen(false); setDcaAmount(""); }}
+              className="text-[10px] font-mono px-2 py-1 rounded text-muted-foreground border transition-opacity hover:opacity-70"
+              style={{ ...mh, borderColor: "var(--border)" }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Crypto breakdown sub-row (desktop) ── */}
       {isCrypto && (
@@ -270,7 +385,18 @@ export function PortfolioRow({ asset, dcaEntries, priceCache, totalValueUsd, sig
                 </span>
               </button>
             )}
-            <p className="text-sm font-mono font-semibold tabular-nums" style={{ color: "var(--gold-500)" }}>{fmtThb(valueThb)}</p>
+            <div className="flex items-center gap-1">
+              <p className="text-sm font-mono font-semibold tabular-nums" style={{ color: "var(--gold-500)" }}>{fmtThb(valueThb)}</p>
+              {price !== undefined && (
+                <button
+                  onClick={() => { setDcaOpen(v => !v); setDcaAmount(""); }}
+                  style={{ ...mh, color: dcaOpen ? "var(--gold-500)" : "var(--muted-foreground)", opacity: dcaOpen ? 1 : 0.35 }}
+                  className="text-[12px] font-bold leading-none"
+                >
+                  ±
+                </button>
+              )}
+            </div>
             <div className="flex items-center gap-0.5">
               <input type="number" min={0} max={100} step={0.5} value={asset.targetWeight}
                 onChange={(e) => onUpdateAsset(asset.id, { targetWeight: parseFloat(e.target.value) || 0 })}
@@ -290,6 +416,7 @@ export function PortfolioRow({ asset, dcaEntries, priceCache, totalValueUsd, sig
             </button>
           </div>
         </div>
+
         {!isCrypto && isEditing && (
           <div className="flex items-center gap-2 mt-2">
             {(["units", "thb"] as const).map((m) => (
@@ -305,6 +432,47 @@ export function PortfolioRow({ asset, dcaEntries, priceCache, totalValueUsd, sig
             />
           </div>
         )}
+
+        {/* Mobile DCA panel */}
+        {dcaOpen && price !== undefined && (
+          <div className="mt-2 pt-2 space-y-2" style={{ borderTop: "1px dashed rgba(255,255,255,0.06)" }}>
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex gap-0.5">
+                {(["buy", "sell"] as const).map(t => (
+                  <button key={t} onMouseDown={(e) => { e.preventDefault(); setDcaType(t); }}
+                    className="text-[10px] font-bold px-2 py-1 rounded uppercase transition-colors"
+                    style={{ ...mh, background: dcaType === t ? (t === "buy" ? "rgba(45,212,191,0.2)" : "rgba(251,113,133,0.2)") : "var(--muted)", color: dcaType === t ? (t === "buy" ? "#2dd4bf" : "#fb7185") : "var(--muted-foreground)" }}>
+                    {t === "buy" ? "DCA In" : "Sell Out"}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-1.5 flex-1 min-w-24">
+                <span className="text-[10px] text-muted-foreground">฿</span>
+                <input autoFocus type="number" min={0} placeholder="Amount" value={dcaAmount}
+                  onChange={e => setDcaAmount(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") commitDCA(); if (e.key === "Escape") { setDcaOpen(false); setDcaAmount(""); } }}
+                  className="flex-1 text-right text-xs font-mono bg-transparent outline-none border-b"
+                  style={{ ...mh, borderColor: dcaType === "buy" ? "#2dd4bf" : "#fb7185" }} />
+              </div>
+            </div>
+            {dcaUnitsPreview > 0 && (
+              <p className="text-[10px] font-mono text-muted-foreground">≈ {fmtUnits(dcaUnitsPreview)} @ {fmtThb(dcaPriceThb)}</p>
+            )}
+            <div className="flex gap-2">
+              <button onClick={commitDCA} disabled={!canConfirmDCA}
+                className="text-[10px] font-bold px-3 py-1 rounded disabled:opacity-30"
+                style={{ ...mh, background: dcaBtnBg, color: dcaBtnColor }}>
+                Confirm
+              </button>
+              <button onClick={() => { setDcaOpen(false); setDcaAmount(""); }}
+                className="text-[10px] font-mono px-2 py-1 rounded text-muted-foreground"
+                style={{ ...mh }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Crypto breakdown sub-row (mobile) */}
         {isCrypto && (
           <div className="mt-2 space-y-1.5 pt-2" style={{ borderTop: "1px dashed rgba(255,255,255,0.06)" }}>
