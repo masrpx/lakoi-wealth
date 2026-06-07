@@ -19,7 +19,8 @@
 - Framer Motion for animations
 - Zustand + `persist` middleware for all state (localStorage)
 - `@react-pdf/renderer` for PDF export
-- No backend — all data lives in localStorage
+- `@vercel/blob` for cloud sync of admin portfolio data
+- Primary data store: localStorage. Cloud backup: Vercel Blob (admin portfolio only).
 
 ---
 
@@ -40,6 +41,7 @@ app/
   api/
     admin/verify/           # POST — verify ADMIN_PIN env var
     price/[ticker]/         # GET — Yahoo Finance proxy (returns price + 252d OHLCV)
+    portfolio/sync/         # GET/POST — Vercel Blob cloud sync for admin portfolio
   globals.css               # Design tokens, Tailwind theme overrides
   layout.tsx                # Root layout (fonts, metadata)
   page.tsx                  # Landing page
@@ -76,7 +78,35 @@ types/
 
 **Route:** `/admin/portfolio`  
 **Auth:** PIN via `/api/admin/verify` (reads `process.env.ADMIN_PIN`). On success, sets `localStorage["lakoi-admin-authed"] = "1"` (persists across restarts).  
-**Env var needed:** `ADMIN_PIN` in `.env.local` (gitignored) and in Vercel env vars.
+**Env vars needed:** `ADMIN_PIN` and `BLOB_READ_WRITE_TOKEN` in `.env.local` and Vercel env vars.  
+Pull both locally with: `vercel env pull .env.local`
+
+### Cloud sync (`/api/portfolio/sync`)
+Portfolio state is synced to Vercel Blob at `portfolio/lakoi-growth-portfolio.json`.  
+- **On page load**: fetches blob → imports into Zustand store (cloud wins over localStorage)  
+- **On any change**: debounced 2s POST saves current state to blob  
+- **Bootstrap**: if blob is empty on first load, local state is pushed up automatically  
+
+**Blob store is private.** Key patterns for working with it:
+```ts
+import { list, put } from "@vercel/blob";
+
+// Write
+await put("path/file.json", JSON.stringify(data), {
+  access: "private",          // store is private — never use "public"
+  contentType: "application/json",
+  addRandomSuffix: false,
+  allowOverwrite: true,
+});
+
+// Read — must pass Authorization header; downloadUrl also requires it
+const { blobs } = await list({ prefix: "path/file.json" });
+const res = await fetch(blobs[0].url, {
+  cache: "no-store",
+  headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+});
+const data = await res.json();
+```
 
 ### Currency
 Everything is Thai Baht (฿). USD prices from Yahoo Finance are multiplied by the live USDTHB rate.  

@@ -15,7 +15,10 @@
       "Bash(vercel env *)",
       "Bash(vercel link *)",
       "Bash(grep -v \"^$\")",
-      "Bash(vercel *)"
+      "Bash(vercel *)",
+      "Bash(git show *)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); m=d['chart']['result'][0]['meta']; print\\({k:v for k,v in m.items\\(\\) if 'price' in k.lower\\(\\) or 'close' in k.lower\\(\\) or 'previous' in k.lower\\(\\)}\\)\")",
+      "Bash(python3 -c ' *)"
     ]
   }
 }

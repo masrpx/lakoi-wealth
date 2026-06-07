@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { PortfolioAsset, DCAEntry, PriceData } from "@/types/growthPortfolio";
+import { rebalAction } from "@/lib/calculations/rules";
 
 const DEFAULT_ASSETS: PortfolioAsset[] = [
   { id: "btc",  ticker: "BTC-USD", name: "Bitcoin",           targetWeight: 30, bucket: "Core",        manualValueTHB: 0, unitsHeld: 0 },
@@ -70,8 +71,19 @@ export const useGrowthPortfolioStore = create<GrowthPortfolioState>()(
       setUsdthbRate: (rate) => set({ usdthbRate: rate }),
 
       exportJSON: () => {
-        const { assets, dcaEntries, usdthbRate } = get();
-        return JSON.stringify({ assets, dcaEntries, usdthbRate }, null, 2);
+        const { assets, dcaEntries, usdthbRate, priceCache } = get();
+        const totalValueUsd = assets.reduce((sum, a) => {
+          return sum + assetValueUsd(a, dcaEntries, priceCache[a.ticker]?.price, usdthbRate);
+        }, 0);
+        const currentWeights: Record<string, number> = {};
+        const rebalActions: Record<string, "TRIM" | "ADD" | null> = {};
+        for (const a of assets) {
+          const valueUsd = assetValueUsd(a, dcaEntries, priceCache[a.ticker]?.price, usdthbRate);
+          const currentPct = totalValueUsd > 0 ? parseFloat(((valueUsd / totalValueUsd) * 100).toFixed(2)) : 0;
+          currentWeights[a.id] = currentPct;
+          rebalActions[a.id] = a.bucket !== "Hedge" ? rebalAction(currentPct, a.targetWeight, a.bucket) : null;
+        }
+        return JSON.stringify({ assets, dcaEntries, usdthbRate, currentWeights, rebalActions }, null, 2);
       },
 
       importJSON: (json) => {
